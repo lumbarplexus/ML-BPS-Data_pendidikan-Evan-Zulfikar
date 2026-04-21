@@ -1,0 +1,51 @@
+"""
+Project structure and implementation summary
+
+DIRECTORY STRUCTURE:
+├── main.py                      # ETL Orchestrator (CLI entry point)
+├── requirements.txt             # Python dependencies
+├── .env                         # Credentials (local, in .gitignore)
+├── .env.example                 # Credentials template
+├── .gitignore                   # Git ignore rules
+│
+├── config/
+│   ├── __init__.py
+│   ├── db_config.py            # DB connection, reads from .env
+│   ├── indicators_mapping.py   # Indicator definitions & lookups
+│   └── constants.py            # Canonical lists, file paths, ranges
+│
+├── etl/
+│   ├── __init__.py
+│   ├── extractor.py            # Read CSVs → raw DataFrames
+│   ├── transformer.py          # Wide→long, validate, flag issues
+│   ├── loader.py               # Insert to PostgreSQL + call SQL
+│   ├── validator.py            # Quality reports, logging
+│   └── reconciler.py           # Staging vs CSV validation GATE
+│
+├── sql/
+│   ├── staging/
+│   │   ├── 01_create_staging_schema.sql
+│   │   ├── 02_create_indikator_raw_table.sql
+│   │   └── 03_create_validation_report_table.sql
+│   ├── dw/
+│   │   ├── 01_create_dw_schema.sql
+│   │   ├── 02_dim_time.sql
+│   │   ├── 03_dim_provinsi.sql
+│   │   ├── 04_dim_indikator.sql
+│   │   └── 05_fact_indikator.sql
+│   └── verification/
+│       ├── 01_reconciliation_counts.sql
+│       ├── 02_data_quality_summary.sql
+│       └── 03_fact_integrity_check.sql
+│
+├── utils/
+│   ├── __init__.py
+│   ├── logger.py               # Logging configuration
+│   └── helpers.py              # Shared helper functions
+│
+├── data/                        # Source CSV files (11 files)
+├── reports/                     # Output reports (auto-generated)
+└── README.md                    # This file
+"""
+
+# No Python code in this file
