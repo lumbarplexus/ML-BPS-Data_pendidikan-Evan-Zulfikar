@@ -1,2 +1,0 @@
-$bytes = [System.IO.File]::ReadAllBytes("f:\BINUS\SEMS 8\code-program\sql\staging\01_create_staging_schema.sql")
-for($i=0; $i -lt $bytes.Length; $i++) { if($bytes[$i] -eq 0xab) { "Found 0xab at position $i" } }
