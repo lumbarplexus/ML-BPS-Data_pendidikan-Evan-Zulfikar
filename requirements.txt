@@ -3,3 +3,7 @@ numpy>=1.26.4
 psycopg2-binary>=2.9.10
 sqlalchemy>=2.0.28
 python-dotenv>=1.0.1
+scikit-learn
+scipy
+matplotlib
+seaborn

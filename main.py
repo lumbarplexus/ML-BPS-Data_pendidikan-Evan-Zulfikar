@@ -1,20 +1,27 @@
 """
-ETL Pipeline Orchestrator
+ETL + ML Pipeline Orchestrator
 
-This script orchestrates the complete ETL process:
+This script orchestrates the complete ETL and ML process:
+
+ETL PHASES:
 - Extract: Read source CSV files
 - Transform: Normalize and validate data
 - Load: Insert to PostgreSQL staging and DW schemas
 - Reconcile: Validate staging vs. source CSVs (GATE before DW load)
-- Verify: Generate quality reports
+- Aggregate: Create data mart tables for ML
+- Validate: Generate quality reports
+
+ML PHASES:
+- ML Pipeline: Run clustering (K-Means, HDBSCAN) and prediction models (Linear Regression, Random Forest)
+- ML Report: Generate HTML report with visualizations
 
 Usage:
-    python main.py --phase all
-    python main.py --phase transform
-    python main.py --phase load-staging
-    python main.py --phase reconcile
-    python main.py --phase load-dw
-    python main.py --phase all --force-dw-load
+    python main.py --phase all                    # Run complete ETL + ML pipeline
+    python main.py --phase validate               # Run up to validation (ETL only)
+    python main.py --phase aggregation            # Run up to aggregation
+    python main.py --phase ml-pipeline            # Run ML pipeline only
+    python main.py --phase ml-report              # Generate ML report
+    python main.py --phase all --force-dw-load    # Force DW load despite reconciliation failure
 """
 
 import argparse
@@ -29,6 +36,8 @@ from etl.loader_python import load_to_staging, create_dw_schema, load_to_dw
 from etl.aggregator import setup_aggregation_schema, refresh_data_mart, validate_aggregations
 from etl.validator import generate_quality_report
 from etl.reconciler import reconcile_staging_to_source, ReconciliationError
+from etl.ml_pipeline import MLPipeline
+from report_generator import EnhancedReportGenerator
 from utils.logger import get_logger
 from utils.helpers import ensure_directory
 
@@ -277,9 +286,86 @@ def phase_validate(args):
         return False
 
 
+def phase_ml_pipeline(args):
+    """Execute ML clustering and prediction pipeline"""
+    logger.info("")
+    logger.info("=" * 100)
+    logger.info("PHASE 9: ML PIPELINE - CLUSTERING & PREDICTION")
+    logger.info("=" * 100)
+    
+    try:
+        logger.info("Starting ML pipeline...")
+        pipeline = MLPipeline()
+        
+        # Load data
+        logger.info("Loading aggregated data...")
+        pipeline.load_data()
+        
+        # Run independent per-target analysis
+        logger.info("Running per-target independent clustering analysis...")
+        pipeline.run_per_target_clustering()
+        
+        # Run correlation analysis
+        logger.info("Running Spearman correlation analysis...")
+        pipeline.spearman_correlation()
+        
+        # Run prediction models
+        logger.info("Running Linear Regression models...")
+        pipeline.linear_regression()
+        
+        logger.info("Running Random Forest models...")
+        pipeline.random_forest()
+        
+        # Save results
+        results_file = 'reports/ml_results.json'
+        pipeline.save_results(results_file)
+        logger.info(f"[OK] ML results saved to {results_file}")
+        
+        logger.info("[OK] ML pipeline complete")
+        return True
+        
+    except Exception as e:
+        logger.error(f"[FAIL] ML pipeline error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def phase_ml_report(args):
+    """Generate enhanced ML analysis HTML report with visualizations"""
+    logger.info("")
+    logger.info("=" * 100)
+    logger.info("PHASE 10: ENHANCED ML REPORT GENERATION")
+    logger.info("=" * 100)
+    
+    try:
+        logger.info("Generating enhanced ML analysis HTML report...")
+        logger.info("  - Spearman correlation heatmap")
+        logger.info("  - Yearly correlation tables by target")
+        logger.info("  - K-Means clustering visualizations (5 graphs)")
+        logger.info("  - Linear Regression prediction plots (5 graphs)")
+        
+        generator = EnhancedReportGenerator()
+        report_file = generator.generate_html('reports/ml_analysis_report_enhanced.html')
+        
+        if report_file:
+            logger.info(f"[OK] Enhanced ML report generated: {report_file}")
+            logger.info("     Open the HTML file in a web browser to view all visualizations")
+            return True
+        else:
+            logger.error("[FAIL] Failed to generate ML report")
+            return False
+            
+    except Exception as e:
+        logger.error(f"[FAIL] ML report generation error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 def run_all_phases(args):
-    """Run all ETL phases in sequence"""
-    logger.info("Starting full ETL pipeline (--phase all)")
+    """Run all ETL and ML phases in sequence"""
+    logger.info("Starting full ETL + ML pipeline (--phase all)")
     logger.info("=" * 100)
     
     phases = [
@@ -291,6 +377,8 @@ def run_all_phases(args):
         ("Load DW", phase_load_dw),
         ("Aggregation", phase_aggregation),
         ("Validate", phase_validate),
+        ("ML Pipeline", phase_ml_pipeline),
+        ("ML Report", phase_ml_report),
     ]
     
     results = {}
@@ -314,7 +402,7 @@ def run_all_phases(args):
     # Summary
     logger.info("")
     logger.info("=" * 100)
-    logger.info("ETL PIPELINE SUMMARY")
+    logger.info("COMPLETE PIPELINE SUMMARY")
     logger.info("=" * 100)
     
     for phase_name, success in results.items():
@@ -325,10 +413,10 @@ def run_all_phases(args):
     logger.info("")
     
     if all_passed:
-        logger.info("[OK] ETL PIPELINE COMPLETE - ALL PHASES SUCCESSFUL")
-        logger.info("Data warehouse is ready for analysis")
+        logger.info("[OK] FULL PIPELINE COMPLETE - ALL PHASES SUCCESSFUL")
+        logger.info("Data warehouse and ML analysis models are ready")
     else:
-        logger.info("[FAIL] ETL PIPELINE INCOMPLETE - SEE ERRORS ABOVE")
+        logger.info("[FAIL] PIPELINE INCOMPLETE - SEE ERRORS ABOVE")
     
     logger.info("=" * 100)
     
@@ -339,25 +427,35 @@ def main():
     """Main entry point"""
     # Parse arguments
     parser = argparse.ArgumentParser(
-        description="ETL Pipeline for Indonesian Statistics Data",
+        description="ETL + ML Pipeline for Indonesian Statistics Data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run full ETL pipeline with reconciliation gate
+  # Run complete ETL + ML pipeline
   python main.py --phase all
   
-  # Run individual phases
+  # Run individual ETL phases
   python main.py --phase extract
   python main.py --phase transform
   python main.py --phase load-staging
   python main.py --phase reconcile
   python main.py --phase load-dw
+  python main.py --phase aggregation
+  python main.py --phase validate
   
-  # Force DW load despite reconciliation failure
-  python main.py --phase all --force-dw-load
+  # Run only ML pipeline (after ETL is complete)
+  python main.py --phase ml-pipeline
+  python main.py --phase ml-report
+  
+  # Run both ML phases together
+  python main.py --phase ml-pipeline
+  python main.py --phase ml-report
   
   # Skip validation for quick test
   python main.py --phase transform --skip-validation
+  
+  # Force DW load despite reconciliation failure
+  python main.py --phase all --force-dw-load
         """
     )
     
@@ -365,10 +463,12 @@ Examples:
         "--phase",
         choices=[
             "extract", "transform", "load-staging", "reconcile", 
-            "create-dw", "load-dw", "aggregation", "validate", "all"
+            "create-dw", "load-dw", "aggregation", "validate", 
+            "ml-pipeline", "ml-report",
+            "all"
         ],
         default="all",
-        help="Which ETL phase to run (default: all)"
+        help="Which pipeline phase to run (default: all)"
     )
     
     parser.add_argument(
@@ -390,7 +490,7 @@ Examples:
     
     logger.info("")
     logger.info("=" * 100)
-    logger.info("ETL PIPELINE FOR INDONESIAN STATISTICS DATA".center(100))
+    logger.info("ETL + ML PIPELINE FOR INDONESIAN STATISTICS DATA".center(100))
     logger.info("=" * 100)
     logger.info("")
     
@@ -419,6 +519,10 @@ Examples:
             success = phase_aggregation(args)
         elif args.phase == "validate":
             success = phase_validate(args)
+        elif args.phase == "ml-pipeline":
+            success = phase_ml_pipeline(args)
+        elif args.phase == "ml-report":
+            success = phase_ml_report(args)
         else:
             logger.error(f"Unknown phase: {args.phase}")
             return 1

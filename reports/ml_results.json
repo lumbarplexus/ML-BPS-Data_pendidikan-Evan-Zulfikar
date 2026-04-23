@@ -1,0 +1,1564 @@
+{
+  "per_target_clustering": {
+    "apm_sd": {
+      "kmeans": {
+        "n_clusters": 2,
+        "inertia": 202.31536519307576,
+        "silhouette": 0.31236377471885435,
+        "labels": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stats": {
+          "cluster_0": {
+            "n_members": 21,
+            "means": {
+              "ekonomi_miskin_mean": 7.0983809523809525,
+              "ekonomi_upah_mean": 19640.99047619048,
+              "kesehatan_ahh_perempuan_mean": 76.53742857142856,
+              "kesehatan_unmet_mean": 4.82247619047619,
+              "ketenagakerjaan_formal_mean": 45.45761904761905,
+              "ketenagakerjaan_informal_mean": 44.14142857142857,
+              "teknologi_telepon_mean": 70.38009523809525,
+              "teknologi_internet_mean": 67.7987619047619,
+              "apm_sd_mean": 98.03466666666665
+            }
+          },
+          "cluster_1": {
+            "n_members": 13,
+            "means": {
+              "ekonomi_miskin_mean": 14.519384615384617,
+              "ekonomi_upah_mean": 18816.55384615385,
+              "kesehatan_ahh_perempuan_mean": 73.07276923076924,
+              "kesehatan_unmet_mean": 5.958153846153845,
+              "ketenagakerjaan_formal_mean": 32.25492307692308,
+              "ketenagakerjaan_informal_mean": 50.144000000000005,
+              "teknologi_telepon_mean": 60.881538461538476,
+              "teknologi_internet_mean": 53.76646153846154,
+              "apm_sd_mean": 96.0726153846154
+            }
+          }
+        }
+      },
+      "hdbscan": {
+        "n_clusters": 2,
+        "n_noise": 25,
+        "noise_ratio": 0.7352941176470589,
+        "silhouette": 0.3780674035851497,
+        "labels": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          1,
+          0,
+          0,
+          -1,
+          -1,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          1
+        ],
+        "stats": {
+          "noise": {
+            "n_members": 25,
+            "means": {
+              "ekonomi_miskin_mean": 10.9904,
+              "ekonomi_upah_mean": 19809.584000000003,
+              "kesehatan_ahh_perempuan_mean": 74.95248000000001,
+              "kesehatan_unmet_mean": 5.28176,
+              "ketenagakerjaan_formal_mean": 39.75984,
+              "ketenagakerjaan_informal_mean": 46.98904,
+              "teknologi_telepon_mean": 66.18608,
+              "teknologi_internet_mean": 61.98928,
+              "apm_sd_mean": 96.92472000000002
+            }
+          },
+          "cluster_0": {
+            "n_members": 4,
+            "means": {
+              "ekonomi_miskin_mean": 5.215,
+              "ekonomi_upah_mean": 19335.5,
+              "kesehatan_ahh_perempuan_mean": 76.0445,
+              "kesehatan_unmet_mean": 5.186,
+              "ketenagakerjaan_formal_mean": 46.3495,
+              "ketenagakerjaan_informal_mean": 44.133,
+              "teknologi_telepon_mean": 70.888,
+              "teknologi_internet_mean": 66.33,
+              "apm_sd_mean": 98.46300000000001
+            }
+          },
+          "cluster_1": {
+            "n_members": 5,
+            "means": {
+              "ekonomi_miskin_mean": 8.4396,
+              "ekonomi_upah_mean": 16898.88,
+              "kesehatan_ahh_perempuan_mean": 75.8484,
+              "kesehatan_unmet_mean": 5.188,
+              "ketenagakerjaan_formal_mean": 38.906,
+              "ketenagakerjaan_informal_mean": 45.516799999999996,
+              "teknologi_telepon_mean": 66.2476,
+              "teknologi_internet_mean": 61.537200000000006,
+              "apm_sd_mean": 98.1404
+            }
+          }
+        }
+      },
+      "n_samples": 34,
+      "provinces": [
+        "ACEH",
+        "BALI",
+        "BANTEN",
+        "BENGKULU",
+        "DI YOGYAKARTA",
+        "DKI JAKARTA",
+        "GORONTALO",
+        "JAMBI",
+        "JAWA BARAT",
+        "JAWA TENGAH",
+        "JAWA TIMUR",
+        "KALIMANTAN BARAT",
+        "KALIMANTAN SELATAN",
+        "KALIMANTAN TENGAH",
+        "KALIMANTAN TIMUR",
+        "KALIMANTAN UTARA",
+        "KEP. BANGKA BELITUNG",
+        "KEP. RIAU",
+        "LAMPUNG",
+        "MALUKU",
+        "MALUKU UTARA",
+        "NUSA TENGGARA BARAT",
+        "NUSA TENGGARA TIMUR",
+        "PAPUA",
+        "PAPUA BARAT",
+        "RIAU",
+        "SULAWESI BARAT",
+        "SULAWESI SELATAN",
+        "SULAWESI TENGAH",
+        "SULAWESI TENGGARA",
+        "SULAWESI UTARA",
+        "SUMATERA BARAT",
+        "SUMATERA SELATAN",
+        "SUMATERA UTARA"
+      ]
+    },
+    "apm_smp": {
+      "kmeans": {
+        "n_clusters": 4,
+        "inertia": 110.5910282392196,
+        "silhouette": 0.31528137249064,
+        "labels": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          2,
+          0,
+          1,
+          1,
+          1,
+          1,
+          3,
+          3,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stats": {
+          "cluster_0": {
+            "n_members": 21,
+            "means": {
+              "ekonomi_miskin_mean": 8.205904761904762,
+              "ekonomi_upah_mean": 18004.114285714288,
+              "kesehatan_ahh_perempuan_mean": 76.25961904761905,
+              "kesehatan_unmet_mean": 5.105238095238095,
+              "ketenagakerjaan_formal_mean": 41.50790476190476,
+              "ketenagakerjaan_informal_mean": 46.34009523809523,
+              "teknologi_telepon_mean": 67.93019047619048,
+              "teknologi_internet_mean": 64.63904761904762,
+              "apm_smp_mean": 80.34200000000001
+            }
+          },
+          "cluster_1": {
+            "n_members": 8,
+            "means": {
+              "ekonomi_miskin_mean": 13.1355,
+              "ekonomi_upah_mean": 17469.075,
+              "kesehatan_ahh_perempuan_mean": 72.85225,
+              "kesehatan_unmet_mean": 6.87825,
+              "ketenagakerjaan_formal_mean": 31.95075,
+              "ketenagakerjaan_informal_mean": 52.036,
+              "teknologi_telepon_mean": 61.13849999999999,
+              "teknologi_internet_mean": 53.86625000000001,
+              "apm_smp_mean": 75.947
+            }
+          },
+          "cluster_2": {
+            "n_members": 3,
+            "means": {
+              "ekonomi_miskin_mean": 5.346666666666667,
+              "ekonomi_upah_mean": 27840.533333333336,
+              "kesehatan_ahh_perempuan_mean": 77.43266666666666,
+              "kesehatan_unmet_mean": 3.4726666666666666,
+              "ketenagakerjaan_formal_mean": 61.138,
+              "ketenagakerjaan_informal_mean": 34.98733333333333,
+              "teknologi_telepon_mean": 80.77266666666667,
+              "teknologi_internet_mean": 81.02933333333333,
+              "apm_smp_mean": 84.62133333333334
+            }
+          },
+          "cluster_3": {
+            "n_members": 2,
+            "means": {
+              "ekonomi_miskin_mean": 22.185000000000002,
+              "ekonomi_upah_mean": 27857.7,
+              "kesehatan_ahh_perempuan_mean": 70.332,
+              "kesehatan_unmet_mean": 3.037,
+              "ketenagakerjaan_formal_mean": 31.619,
+              "ketenagakerjaan_informal_mean": 42.225,
+              "teknologi_telepon_mean": 55.741,
+              "teknologi_internet_mean": 45.650000000000006,
+              "apm_smp_mean": 66.987
+            }
+          }
+        }
+      },
+      "hdbscan": {
+        "n_clusters": 2,
+        "n_noise": 13,
+        "noise_ratio": 0.38235294117647056,
+        "silhouette": 0.3831110074727576,
+        "labels": [
+          1,
+          -1,
+          1,
+          1,
+          1,
+          -1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          -1,
+          1,
+          1,
+          -1,
+          1,
+          1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          1,
+          0,
+          -1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "stats": {
+          "noise": {
+            "n_members": 13,
+            "means": {
+              "ekonomi_miskin_mean": 11.49523076923077,
+              "ekonomi_upah_mean": 21640.800000000003,
+              "kesehatan_ahh_perempuan_mean": 74.16046153846153,
+              "kesehatan_unmet_mean": 5.031692307692307,
+              "ketenagakerjaan_formal_mean": 39.868153846153845,
+              "ketenagakerjaan_informal_mean": 45.58292307692307,
+              "teknologi_telepon_mean": 65.51184615384615,
+              "teknologi_internet_mean": 60.243384615384606,
+              "apm_smp_mean": 77.20092307692308
+            }
+          },
+          "cluster_0": {
+            "n_members": 2,
+            "means": {
+              "ekonomi_miskin_mean": 13.442,
+              "ekonomi_upah_mean": 16365.6,
+              "kesehatan_ahh_perempuan_mean": 72.408,
+              "kesehatan_unmet_mean": 7.305999999999999,
+              "ketenagakerjaan_formal_mean": 35.125,
+              "ketenagakerjaan_informal_mean": 49.730000000000004,
+              "teknologi_telepon_mean": 63.611999999999995,
+              "teknologi_internet_mean": 56.107,
+              "apm_smp_mean": 73.894
+            }
+          },
+          "cluster_1": {
+            "n_members": 19,
+            "means": {
+              "ekonomi_miskin_mean": 8.49978947368421,
+              "ekonomi_upah_mean": 18053.389473684212,
+              "kesehatan_ahh_perempuan_mean": 76.22789473684212,
+              "kesehatan_unmet_mean": 5.194947368421052,
+              "ketenagakerjaan_formal_mean": 41.33621052631579,
+              "ketenagakerjaan_informal_mean": 46.6738947368421,
+              "teknologi_telepon_mean": 67.92442105263159,
+              "teknologi_internet_mean": 64.59789473684211,
+              "apm_smp_mean": 80.58926315789476
+            }
+          }
+        }
+      },
+      "n_samples": 34,
+      "provinces": [
+        "ACEH",
+        "BALI",
+        "BANTEN",
+        "BENGKULU",
+        "DI YOGYAKARTA",
+        "DKI JAKARTA",
+        "GORONTALO",
+        "JAMBI",
+        "JAWA BARAT",
+        "JAWA TENGAH",
+        "JAWA TIMUR",
+        "KALIMANTAN BARAT",
+        "KALIMANTAN SELATAN",
+        "KALIMANTAN TENGAH",
+        "KALIMANTAN TIMUR",
+        "KALIMANTAN UTARA",
+        "KEP. BANGKA BELITUNG",
+        "KEP. RIAU",
+        "LAMPUNG",
+        "MALUKU",
+        "MALUKU UTARA",
+        "NUSA TENGGARA BARAT",
+        "NUSA TENGGARA TIMUR",
+        "PAPUA",
+        "PAPUA BARAT",
+        "RIAU",
+        "SULAWESI BARAT",
+        "SULAWESI SELATAN",
+        "SULAWESI TENGAH",
+        "SULAWESI TENGGARA",
+        "SULAWESI UTARA",
+        "SUMATERA BARAT",
+        "SUMATERA SELATAN",
+        "SUMATERA UTARA"
+      ]
+    },
+    "apm_sm": {
+      "kmeans": {
+        "n_clusters": 4,
+        "inertia": 121.44217108969667,
+        "silhouette": 0.2658211740941168,
+        "labels": [
+          0,
+          3,
+          1,
+          0,
+          1,
+          3,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          3,
+          3,
+          1,
+          3,
+          1,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "stats": {
+          "cluster_0": {
+            "n_members": 11,
+            "means": {
+              "ekonomi_miskin_mean": 14.034545454545457,
+              "ekonomi_upah_mean": 18334.563636363633,
+              "kesehatan_ahh_perempuan_mean": 73.00872727272727,
+              "kesehatan_unmet_mean": 6.299090909090908,
+              "ketenagakerjaan_formal_mean": 33.412181818181814,
+              "ketenagakerjaan_informal_mean": 50.11163636363637,
+              "teknologi_telepon_mean": 62.14927272727273,
+              "teknologi_internet_mean": 54.69309090909091,
+              "apm_sm_mean": 64.29654545454544
+            }
+          },
+          "cluster_1": {
+            "n_members": 17,
+            "means": {
+              "ekonomi_miskin_mean": 7.854235294117647,
+              "ekonomi_upah_mean": 17775.870588235295,
+              "kesehatan_ahh_perempuan_mean": 76.37164705882353,
+              "kesehatan_unmet_mean": 5.1924705882352935,
+              "ketenagakerjaan_formal_mean": 41.45647058823529,
+              "ketenagakerjaan_informal_mean": 46.879294117647056,
+              "teknologi_telepon_mean": 67.67352941176469,
+              "teknologi_internet_mean": 64.79658823529412,
+              "apm_sm_mean": 62.233294117647056
+            }
+          },
+          "cluster_2": {
+            "n_members": 1,
+            "means": {
+              "ekonomi_miskin_mean": 23.174,
+              "ekonomi_upah_mean": 28607.2,
+              "kesehatan_ahh_perempuan_mean": 70.418,
+              "kesehatan_unmet_mean": 2.698,
+              "ketenagakerjaan_formal_mean": 22.758,
+              "ketenagakerjaan_informal_mean": 44.572,
+              "teknologi_telepon_mean": 44.126,
+              "teknologi_internet_mean": 34.088,
+              "apm_sm_mean": 49.284
+            }
+          },
+          "cluster_3": {
+            "n_members": 5,
+            "means": {
+              "ekonomi_miskin_mean": 5.3484,
+              "ekonomi_upah_mean": 24919.76,
+              "kesehatan_ahh_perempuan_mean": 77.08,
+              "kesehatan_unmet_mean": 3.6936,
+              "ketenagakerjaan_formal_mean": 55.7744,
+              "ketenagakerjaan_informal_mean": 37.2188,
+              "teknologi_telepon_mean": 78.2448,
+              "teknologi_internet_mean": 77.0968,
+              "apm_sm_mean": 69.2856
+            }
+          }
+        }
+      },
+      "hdbscan": {
+        "n_clusters": 2,
+        "n_noise": 29,
+        "noise_ratio": 0.8529411764705882,
+        "silhouette": 0.3741773130767868,
+        "labels": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          -1,
+          -1,
+          -1,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1
+        ],
+        "stats": {
+          "noise": {
+            "n_members": 29,
+            "means": {
+              "ekonomi_miskin_mean": 10.393931034482758,
+              "ekonomi_upah_mean": 19590.496551724136,
+              "kesehatan_ahh_perempuan_mean": 75.07979310344827,
+              "kesehatan_unmet_mean": 5.26903448275862,
+              "ketenagakerjaan_formal_mean": 40.324000000000005,
+              "ketenagakerjaan_informal_mean": 46.60537931034484,
+              "teknologi_telepon_mean": 66.46737931034482,
+              "teknologi_internet_mean": 62.23910344827587,
+              "apm_sm_mean": 64.08020689655172
+            }
+          },
+          "cluster_0": {
+            "n_members": 2,
+            "means": {
+              "ekonomi_miskin_mean": 4.498,
+              "ekonomi_upah_mean": 18939.3,
+              "kesehatan_ahh_perempuan_mean": 76.068,
+              "kesehatan_unmet_mean": 5.385,
+              "ketenagakerjaan_formal_mean": 45.774,
+              "ketenagakerjaan_informal_mean": 44.444,
+              "teknologi_telepon_mean": 69.84,
+              "teknologi_internet_mean": 66.793,
+              "apm_sm_mean": 59.601
+            }
+          },
+          "cluster_1": {
+            "n_members": 3,
+            "means": {
+              "ekonomi_miskin_mean": 9.132666666666667,
+              "ekonomi_upah_mean": 17024.333333333332,
+              "kesehatan_ahh_perempuan_mean": 75.92733333333332,
+              "kesehatan_unmet_mean": 5.052,
+              "ketenagakerjaan_formal_mean": 37.66,
+              "ketenagakerjaan_informal_mean": 46.132666666666665,
+              "teknologi_telepon_mean": 67.40266666666666,
+              "teknologi_internet_mean": 61.406000000000006,
+              "apm_sm_mean": 61.13733333333334
+            }
+          }
+        }
+      },
+      "n_samples": 34,
+      "provinces": [
+        "ACEH",
+        "BALI",
+        "BANTEN",
+        "BENGKULU",
+        "DI YOGYAKARTA",
+        "DKI JAKARTA",
+        "GORONTALO",
+        "JAMBI",
+        "JAWA BARAT",
+        "JAWA TENGAH",
+        "JAWA TIMUR",
+        "KALIMANTAN BARAT",
+        "KALIMANTAN SELATAN",
+        "KALIMANTAN TENGAH",
+        "KALIMANTAN TIMUR",
+        "KALIMANTAN UTARA",
+        "KEP. BANGKA BELITUNG",
+        "KEP. RIAU",
+        "LAMPUNG",
+        "MALUKU",
+        "MALUKU UTARA",
+        "NUSA TENGGARA BARAT",
+        "NUSA TENGGARA TIMUR",
+        "PAPUA",
+        "PAPUA BARAT",
+        "RIAU",
+        "SULAWESI BARAT",
+        "SULAWESI SELATAN",
+        "SULAWESI TENGAH",
+        "SULAWESI TENGGARA",
+        "SULAWESI UTARA",
+        "SUMATERA BARAT",
+        "SUMATERA SELATAN",
+        "SUMATERA UTARA"
+      ]
+    },
+    "apk_pt": {
+      "kmeans": {
+        "n_clusters": 2,
+        "inertia": 205.43516612895579,
+        "silhouette": 0.2914895600525099,
+        "labels": [
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stats": {
+          "cluster_0": {
+            "n_members": 21,
+            "means": {
+              "ekonomi_miskin_mean": 7.0983809523809525,
+              "ekonomi_upah_mean": 19640.99047619048,
+              "kesehatan_ahh_perempuan_mean": 76.53742857142856,
+              "kesehatan_unmet_mean": 4.82247619047619,
+              "ketenagakerjaan_formal_mean": 45.45761904761905,
+              "ketenagakerjaan_informal_mean": 44.14142857142857,
+              "teknologi_telepon_mean": 70.38009523809525,
+              "teknologi_internet_mean": 67.7987619047619,
+              "apk_pt_mean": 33.42104761904761
+            }
+          },
+          "cluster_1": {
+            "n_members": 13,
+            "means": {
+              "ekonomi_miskin_mean": 14.519384615384617,
+              "ekonomi_upah_mean": 18816.55384615385,
+              "kesehatan_ahh_perempuan_mean": 73.07276923076924,
+              "kesehatan_unmet_mean": 5.958153846153845,
+              "ketenagakerjaan_formal_mean": 32.25492307692308,
+              "ketenagakerjaan_informal_mean": 50.144000000000005,
+              "teknologi_telepon_mean": 60.881538461538476,
+              "teknologi_internet_mean": 53.76646153846154,
+              "apk_pt_mean": 36.184615384615384
+            }
+          }
+        }
+      },
+      "hdbscan": {
+        "n_clusters": 2,
+        "n_noise": 27,
+        "noise_ratio": 0.7941176470588235,
+        "silhouette": 0.2960650485876872,
+        "labels": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          1,
+          1
+        ],
+        "stats": {
+          "noise": {
+            "n_members": 27,
+            "means": {
+              "ekonomi_miskin_mean": 10.413407407407407,
+              "ekonomi_upah_mean": 19731.229629629634,
+              "kesehatan_ahh_perempuan_mean": 74.96948148148148,
+              "kesehatan_unmet_mean": 5.328222222222222,
+              "ketenagakerjaan_formal_mean": 40.17585185185185,
+              "ketenagakerjaan_informal_mean": 46.36955555555556,
+              "teknologi_telepon_mean": 66.39148148148148,
+              "teknologi_internet_mean": 62.281555555555556,
+              "apk_pt_mean": 35.39933333333333
+            }
+          },
+          "cluster_0": {
+            "n_members": 2,
+            "means": {
+              "ekonomi_miskin_mean": 5.932,
+              "ekonomi_upah_mean": 19731.699999999997,
+              "kesehatan_ahh_perempuan_mean": 76.021,
+              "kesehatan_unmet_mean": 4.987,
+              "ketenagakerjaan_formal_mean": 46.925,
+              "ketenagakerjaan_informal_mean": 43.822,
+              "teknologi_telepon_mean": 71.936,
+              "teknologi_internet_mean": 65.86699999999999,
+              "apk_pt_mean": 30.941
+            }
+          },
+          "cluster_1": {
+            "n_members": 5,
+            "means": {
+              "ekonomi_miskin_mean": 8.958400000000001,
+              "ekonomi_upah_mean": 16973.879999999997,
+              "kesehatan_ahh_perempuan_mean": 76.2028,
+              "kesehatan_unmet_mean": 4.978399999999999,
+              "ketenagakerjaan_formal_mean": 39.065200000000004,
+              "ketenagakerjaan_informal_mean": 47.844,
+              "teknologi_telepon_mean": 66.6,
+              "teknologi_internet_mean": 61.880399999999995,
+              "apk_pt_mean": 30.9156
+            }
+          }
+        }
+      },
+      "n_samples": 34,
+      "provinces": [
+        "ACEH",
+        "BALI",
+        "BANTEN",
+        "BENGKULU",
+        "DI YOGYAKARTA",
+        "DKI JAKARTA",
+        "GORONTALO",
+        "JAMBI",
+        "JAWA BARAT",
+        "JAWA TENGAH",
+        "JAWA TIMUR",
+        "KALIMANTAN BARAT",
+        "KALIMANTAN SELATAN",
+        "KALIMANTAN TENGAH",
+        "KALIMANTAN TIMUR",
+        "KALIMANTAN UTARA",
+        "KEP. BANGKA BELITUNG",
+        "KEP. RIAU",
+        "LAMPUNG",
+        "MALUKU",
+        "MALUKU UTARA",
+        "NUSA TENGGARA BARAT",
+        "NUSA TENGGARA TIMUR",
+        "PAPUA",
+        "PAPUA BARAT",
+        "RIAU",
+        "SULAWESI BARAT",
+        "SULAWESI SELATAN",
+        "SULAWESI TENGAH",
+        "SULAWESI TENGGARA",
+        "SULAWESI UTARA",
+        "SUMATERA BARAT",
+        "SUMATERA SELATAN",
+        "SUMATERA UTARA"
+      ]
+    },
+    "rata_rata_lama_sekolah": {
+      "kmeans": {
+        "n_clusters": 3,
+        "inertia": 148.44207631936726,
+        "silhouette": 0.2990221240968648,
+        "labels": [
+          0,
+          1,
+          1,
+          0,
+          1,
+          2,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          2,
+          1,
+          1,
+          2,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "stats": {
+          "cluster_0": {
+            "n_members": 12,
+            "means": {
+              "ekonomi_miskin_mean": 14.796166666666666,
+              "ekonomi_upah_mean": 19190.616666666665,
+              "kesehatan_ahh_perempuan_mean": 72.79283333333333,
+              "kesehatan_unmet_mean": 5.999,
+              "ketenagakerjaan_formal_mean": 32.52433333333334,
+              "ketenagakerjaan_informal_mean": 49.65,
+              "teknologi_telepon_mean": 60.64733333333334,
+              "teknologi_internet_mean": 52.976,
+              "rata_rata_lama_sekolah_mean": 9.091666666666667
+            }
+          },
+          "cluster_1": {
+            "n_members": 19,
+            "means": {
+              "ekonomi_miskin_mean": 7.590736842105264,
+              "ekonomi_upah_mean": 18066.684210526317,
+              "kesehatan_ahh_perempuan_mean": 76.39052631578947,
+              "kesehatan_unmet_mean": 5.06957894736842,
+              "ketenagakerjaan_formal_mean": 42.11673684210527,
+              "ketenagakerjaan_informal_mean": 46.21473684210526,
+              "teknologi_telepon_mean": 68.38715789473684,
+              "teknologi_internet_mean": 65.47042105263158,
+              "rata_rata_lama_sekolah_mean": 9.141052631578948
+            }
+          },
+          "cluster_2": {
+            "n_members": 3,
+            "means": {
+              "ekonomi_miskin_mean": 5.346666666666667,
+              "ekonomi_upah_mean": 27840.533333333336,
+              "kesehatan_ahh_perempuan_mean": 77.43266666666666,
+              "kesehatan_unmet_mean": 3.4726666666666666,
+              "ketenagakerjaan_formal_mean": 61.138,
+              "ketenagakerjaan_informal_mean": 34.98733333333333,
+              "teknologi_telepon_mean": 80.77266666666667,
+              "teknologi_internet_mean": 81.02933333333333,
+              "rata_rata_lama_sekolah_mean": 10.627333333333333
+            }
+          }
+        }
+      },
+      "hdbscan": {
+        "n_clusters": 2,
+        "n_noise": 29,
+        "noise_ratio": 0.8529411764705882,
+        "silhouette": 0.40239816042172516,
+        "labels": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          0,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1,
+          -1,
+          -1,
+          -1,
+          1,
+          -1
+        ],
+        "stats": {
+          "noise": {
+            "n_members": 29,
+            "means": {
+              "ekonomi_miskin_mean": 10.376758620689655,
+              "ekonomi_upah_mean": 19524.496551724136,
+              "kesehatan_ahh_perempuan_mean": 75.0958620689655,
+              "kesehatan_unmet_mean": 5.249999999999999,
+              "ketenagakerjaan_formal_mean": 40.38117241379311,
+              "ketenagakerjaan_informal_mean": 46.61200000000001,
+              "teknologi_telepon_mean": 66.39131034482757,
+              "teknologi_internet_mean": 62.28048275862069,
+              "rata_rata_lama_sekolah_mean": 9.302620689655171
+            }
+          },
+          "cluster_0": {
+            "n_members": 2,
+            "means": {
+              "ekonomi_miskin_mean": 4.747,
+              "ekonomi_upah_mean": 19896.3,
+              "kesehatan_ahh_perempuan_mean": 75.83500000000001,
+              "kesehatan_unmet_mean": 5.661,
+              "ketenagakerjaan_formal_mean": 44.945,
+              "ketenagakerjaan_informal_mean": 44.348,
+              "teknologi_telepon_mean": 70.943,
+              "teknologi_internet_mean": 66.193,
+              "rata_rata_lama_sekolah_mean": 8.954
+            }
+          },
+          "cluster_1": {
+            "n_members": 3,
+            "means": {
+              "ekonomi_miskin_mean": 9.132666666666667,
+              "ekonomi_upah_mean": 17024.333333333332,
+              "kesehatan_ahh_perempuan_mean": 75.92733333333332,
+              "kesehatan_unmet_mean": 5.052,
+              "ketenagakerjaan_formal_mean": 37.66,
+              "ketenagakerjaan_informal_mean": 46.132666666666665,
+              "teknologi_telepon_mean": 67.40266666666666,
+              "teknologi_internet_mean": 61.406000000000006,
+              "rata_rata_lama_sekolah_mean": 8.992666666666667
+            }
+          }
+        }
+      },
+      "n_samples": 34,
+      "provinces": [
+        "ACEH",
+        "BALI",
+        "BANTEN",
+        "BENGKULU",
+        "DI YOGYAKARTA",
+        "DKI JAKARTA",
+        "GORONTALO",
+        "JAMBI",
+        "JAWA BARAT",
+        "JAWA TENGAH",
+        "JAWA TIMUR",
+        "KALIMANTAN BARAT",
+        "KALIMANTAN SELATAN",
+        "KALIMANTAN TENGAH",
+        "KALIMANTAN TIMUR",
+        "KALIMANTAN UTARA",
+        "KEP. BANGKA BELITUNG",
+        "KEP. RIAU",
+        "LAMPUNG",
+        "MALUKU",
+        "MALUKU UTARA",
+        "NUSA TENGGARA BARAT",
+        "NUSA TENGGARA TIMUR",
+        "PAPUA",
+        "PAPUA BARAT",
+        "RIAU",
+        "SULAWESI BARAT",
+        "SULAWESI SELATAN",
+        "SULAWESI TENGAH",
+        "SULAWESI TENGGARA",
+        "SULAWESI UTARA",
+        "SUMATERA BARAT",
+        "SUMATERA SELATAN",
+        "SUMATERA UTARA"
+      ]
+    }
+  },
+  "spearman": {
+    "correlations": {
+      "apm_sd": {
+        "ekonomi_miskin": {
+          "coefficient": -0.24458075965653867,
+          "p_value": 0.0013072798829309952,
+          "significant": true
+        },
+        "ekonomi_upah_rata_rata": {
+          "coefficient": -0.27174254893911404,
+          "p_value": 0.0003375398613611936,
+          "significant": true
+        },
+        "kesehatan_ahh_perempuan": {
+          "coefficient": 0.44594243046494164,
+          "p_value": 1.0987677514494202e-09,
+          "significant": true
+        },
+        "kesehatan_unmet_layanan": {
+          "coefficient": 0.04695661095390192,
+          "p_value": 0.5431491489203519,
+          "significant": false
+        },
+        "ketenagakerjaan_formal": {
+          "coefficient": 0.21566027938065865,
+          "p_value": 0.004736415638862405,
+          "significant": true
+        },
+        "ketenagakerjaan_informal": {
+          "coefficient": -0.015589676829288144,
+          "p_value": 0.840090980161441,
+          "significant": false
+        },
+        "teknologi_telepon_seluler": {
+          "coefficient": 0.276475664034627,
+          "p_value": 0.00026264312268683537,
+          "significant": true
+        },
+        "teknologi_internet": {
+          "coefficient": 0.359902318290889,
+          "p_value": 1.432319731909567e-06,
+          "significant": true
+        }
+      },
+      "apm_smp": {
+        "ekonomi_miskin": {
+          "coefficient": -0.32024089117138144,
+          "p_value": 2.069217366064673e-05,
+          "significant": true
+        },
+        "ekonomi_upah_rata_rata": {
+          "coefficient": -0.037762533265356946,
+          "p_value": 0.6249089466738222,
+          "significant": false
+        },
+        "kesehatan_ahh_perempuan": {
+          "coefficient": 0.6882349673029315,
+          "p_value": 3.4195804471626834e-25,
+          "significant": true
+        },
+        "kesehatan_unmet_layanan": {
+          "coefficient": -0.20894567209230114,
+          "p_value": 0.0062481149826649025,
+          "significant": true
+        },
+        "ketenagakerjaan_formal": {
+          "coefficient": 0.44491627371341647,
+          "p_value": 1.2118721649291657e-09,
+          "significant": true
+        },
+        "ketenagakerjaan_informal": {
+          "coefficient": -0.1835046308653732,
+          "p_value": 0.016605322585676426,
+          "significant": true
+        },
+        "teknologi_telepon_seluler": {
+          "coefficient": 0.3860650271874106,
+          "p_value": 1.9977595661713862e-07,
+          "significant": true
+        },
+        "teknologi_internet": {
+          "coefficient": 0.5276471328233598,
+          "p_value": 1.4329580769027281e-13,
+          "significant": true
+        }
+      },
+      "apm_sm": {
+        "ekonomi_miskin": {
+          "coefficient": -0.06566510867896799,
+          "p_value": 0.3948970107960667,
+          "significant": false
+        },
+        "ekonomi_upah_rata_rata": {
+          "coefficient": -0.00468002525659099,
+          "p_value": 0.951701513383633,
+          "significant": false
+        },
+        "kesehatan_ahh_perempuan": {
+          "coefficient": 0.17056685856828055,
+          "p_value": 0.02615962738609103,
+          "significant": true
+        },
+        "kesehatan_unmet_layanan": {
+          "coefficient": -0.2341292280776771,
+          "p_value": 0.0021193505971908643,
+          "significant": true
+        },
+        "ketenagakerjaan_formal": {
+          "coefficient": 0.16581216101293883,
+          "p_value": 0.030698664127777362,
+          "significant": true
+        },
+        "ketenagakerjaan_informal": {
+          "coefficient": -0.08809320986038548,
+          "p_value": 0.2533114552828545,
+          "significant": false
+        },
+        "teknologi_telepon_seluler": {
+          "coefficient": 0.2417512829844869,
+          "p_value": 0.0014930012619897809,
+          "significant": true
+        },
+        "teknologi_internet": {
+          "coefficient": 0.2916210205489405,
+          "p_value": 0.00011411892728492344,
+          "significant": true
+        }
+      },
+      "apk_pt": {
+        "ekonomi_miskin": {
+          "coefficient": 0.133454894307863,
+          "p_value": 0.08274604551838079,
+          "significant": false
+        },
+        "ekonomi_upah_rata_rata": {
+          "coefficient": 0.06518307550761543,
+          "p_value": 0.3983836257727637,
+          "significant": false
+        },
+        "kesehatan_ahh_perempuan": {
+          "coefficient": -0.16207572911422888,
+          "p_value": 0.034720801735857655,
+          "significant": true
+        },
+        "kesehatan_unmet_layanan": {
+          "coefficient": -0.05315359602374568,
+          "p_value": 0.49119350836531056,
+          "significant": false
+        },
+        "ketenagakerjaan_formal": {
+          "coefficient": -0.06334823116038746,
+          "p_value": 0.4118224617763457,
+          "significant": false
+        },
+        "ketenagakerjaan_informal": {
+          "coefficient": 0.054609794821731,
+          "p_value": 0.47938045437845817,
+          "significant": false
+        },
+        "teknologi_telepon_seluler": {
+          "coefficient": 0.04079279772221265,
+          "p_value": 0.5973821741774481,
+          "significant": false
+        },
+        "teknologi_internet": {
+          "coefficient": -0.03657907319434516,
+          "p_value": 0.6358047714811954,
+          "significant": false
+        }
+      },
+      "rata_rata_lama_sekolah": {
+        "ekonomi_miskin": {
+          "coefficient": -0.2406353988349431,
+          "p_value": 0.001572646743678185,
+          "significant": true
+        },
+        "ekonomi_upah_rata_rata": {
+          "coefficient": 0.5077723344226621,
+          "p_value": 1.5777979111432602e-12,
+          "significant": true
+        },
+        "kesehatan_ahh_perempuan": {
+          "coefficient": 0.21318282032118877,
+          "p_value": 0.0052510366676999124,
+          "significant": true
+        },
+        "kesehatan_unmet_layanan": {
+          "coefficient": -0.48301599210504353,
+          "p_value": 2.5408365555207403e-11,
+          "significant": true
+        },
+        "ketenagakerjaan_formal": {
+          "coefficient": 0.5261438690951651,
+          "p_value": 1.7275202338635513e-13,
+          "significant": true
+        },
+        "ketenagakerjaan_informal": {
+          "coefficient": -0.45156808803019094,
+          "p_value": 6.38416006625203e-10,
+          "significant": true
+        },
+        "teknologi_telepon_seluler": {
+          "coefficient": 0.5428319135581515,
+          "p_value": 2.0568258406372376e-14,
+          "significant": true
+        },
+        "teknologi_internet": {
+          "coefficient": 0.4025040017887344,
+          "p_value": 5.2918864144714906e-08,
+          "significant": true
+        }
+      }
+    },
+    "correlation_matrix": [
+      {
+        "target": "apm_sd",
+        "ekonomi_miskin": -0.24458075965653867,
+        "ekonomi_upah_rata_rata": -0.27174254893911404,
+        "kesehatan_ahh_perempuan": 0.44594243046494164,
+        "kesehatan_unmet_layanan": 0.04695661095390192,
+        "ketenagakerjaan_formal": 0.21566027938065865,
+        "ketenagakerjaan_informal": -0.015589676829288144,
+        "teknologi_telepon_seluler": 0.276475664034627,
+        "teknologi_internet": 0.359902318290889
+      },
+      {
+        "target": "apm_smp",
+        "ekonomi_miskin": -0.32024089117138144,
+        "ekonomi_upah_rata_rata": -0.037762533265356946,
+        "kesehatan_ahh_perempuan": 0.6882349673029315,
+        "kesehatan_unmet_layanan": -0.20894567209230114,
+        "ketenagakerjaan_formal": 0.44491627371341647,
+        "ketenagakerjaan_informal": -0.1835046308653732,
+        "teknologi_telepon_seluler": 0.3860650271874106,
+        "teknologi_internet": 0.5276471328233598
+      },
+      {
+        "target": "apm_sm",
+        "ekonomi_miskin": -0.06566510867896799,
+        "ekonomi_upah_rata_rata": -0.00468002525659099,
+        "kesehatan_ahh_perempuan": 0.17056685856828055,
+        "kesehatan_unmet_layanan": -0.2341292280776771,
+        "ketenagakerjaan_formal": 0.16581216101293883,
+        "ketenagakerjaan_informal": -0.08809320986038548,
+        "teknologi_telepon_seluler": 0.2417512829844869,
+        "teknologi_internet": 0.2916210205489405
+      },
+      {
+        "target": "apk_pt",
+        "ekonomi_miskin": 0.133454894307863,
+        "ekonomi_upah_rata_rata": 0.06518307550761543,
+        "kesehatan_ahh_perempuan": -0.16207572911422888,
+        "kesehatan_unmet_layanan": -0.05315359602374568,
+        "ketenagakerjaan_formal": -0.06334823116038746,
+        "ketenagakerjaan_informal": 0.054609794821731,
+        "teknologi_telepon_seluler": 0.04079279772221265,
+        "teknologi_internet": -0.03657907319434516
+      },
+      {
+        "target": "rata_rata_lama_sekolah",
+        "ekonomi_miskin": -0.2406353988349431,
+        "ekonomi_upah_rata_rata": 0.5077723344226621,
+        "kesehatan_ahh_perempuan": 0.21318282032118877,
+        "kesehatan_unmet_layanan": -0.48301599210504353,
+        "ketenagakerjaan_formal": 0.5261438690951651,
+        "ketenagakerjaan_informal": -0.45156808803019094,
+        "teknologi_telepon_seluler": 0.5428319135581515,
+        "teknologi_internet": 0.4025040017887344
+      }
+    ]
+  },
+  "linear_regression": {
+    "apm_sd": {
+      "coefficients": {
+        "ekonomi_miskin": 0.0705405897878317,
+        "ekonomi_upah_rata_rata": -0.0002616281053927083,
+        "kesehatan_ahh_perempuan": 0.24660432420968922,
+        "kesehatan_unmet_layanan": 0.19306793051271054,
+        "ketenagakerjaan_formal": 0.24137558685310537,
+        "ketenagakerjaan_informal": 0.2918512013551342,
+        "teknologi_telepon_seluler": 0.23376261107409083,
+        "teknologi_internet": -0.0719543048825434
+      },
+      "p_values": {
+        "ekonomi_miskin": 0.16270222942660384,
+        "ekonomi_upah_rata_rata": 1.8464845585874912e-07,
+        "kesehatan_ahh_perempuan": 0.0869843477440293,
+        "kesehatan_unmet_layanan": 0.06351065799232458,
+        "ketenagakerjaan_formal": 2.3549933747535334e-06,
+        "ketenagakerjaan_informal": 4.808522025001594e-09,
+        "teknologi_telepon_seluler": 2.6073421680150588e-05,
+        "teknologi_internet": 0.0136977763675179
+      },
+      "intercept": 47.674471533997874,
+      "mae": 1.1387419127007974,
+      "r2": 0.2759383614289833,
+      "adj_r2": 0.04423863708625797,
+      "rmse": 1.4629143234491706,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apm_smp": {
+      "coefficients": {
+        "ekonomi_miskin": 0.3457600625826374,
+        "ekonomi_upah_rata_rata": -0.00021860065542189666,
+        "kesehatan_ahh_perempuan": 1.3713543319320367,
+        "kesehatan_unmet_layanan": -0.13686464094899223,
+        "ketenagakerjaan_formal": 0.45614560544439053,
+        "ketenagakerjaan_informal": 0.4810356228389314,
+        "teknologi_telepon_seluler": 0.23827350716415832,
+        "teknologi_internet": -0.10057608033197174
+      },
+      "p_values": {
+        "ekonomi_miskin": 0.0006278259129450792,
+        "ekonomi_upah_rata_rata": 0.020368986679623058,
+        "kesehatan_ahh_perempuan": 3.027452863513247e-06,
+        "kesehatan_unmet_layanan": 0.5002026303076001,
+        "ketenagakerjaan_formal": 5.148161300594367e-06,
+        "ketenagakerjaan_informal": 5.470316104538853e-07,
+        "teknologi_telepon_seluler": 0.02508730444925722,
+        "teknologi_internet": 0.07741776010096957
+      },
+      "intercept": -73.08662371442767,
+      "mae": 3.4489939528438542,
+      "r2": 0.4002848162404168,
+      "adj_r2": 0.20837595743735027,
+      "rmse": 4.28963652974799,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apm_sm": {
+      "coefficients": {
+        "ekonomi_miskin": 0.18881078118179434,
+        "ekonomi_upah_rata_rata": -0.0006111943617132798,
+        "kesehatan_ahh_perempuan": -0.9025026800190526,
+        "kesehatan_unmet_layanan": -0.9579334928834815,
+        "ketenagakerjaan_formal": 0.3620029260878816,
+        "ketenagakerjaan_informal": 0.26489006488464156,
+        "teknologi_telepon_seluler": 0.30031358650890305,
+        "teknologi_internet": 0.053547813100427055
+      },
+      "p_values": {
+        "ekonomi_miskin": 0.19300435231329782,
+        "ekonomi_upah_rata_rata": 1.5900665218726573e-05,
+        "kesehatan_ahh_perempuan": 0.029763114501290433,
+        "kesehatan_unmet_layanan": 0.001555767244669548,
+        "ketenagakerjaan_formal": 0.010939863979136932,
+        "ketenagakerjaan_informal": 0.04914609594362762,
+        "teknologi_telepon_seluler": 0.05306477629964301,
+        "teknologi_internet": 0.5182974449463811
+      },
+      "intercept": 96.13431443323611,
+      "mae": 4.604380307257756,
+      "r2": 0.15972968552177802,
+      "adj_r2": -0.10915681511125297,
+      "rmse": 5.5294067897402535,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apk_pt": {
+      "coefficients": {
+        "ekonomi_miskin": 0.7625322391937421,
+        "ekonomi_upah_rata_rata": -0.0003306248643408227,
+        "kesehatan_ahh_perempuan": -0.8764454942905398,
+        "kesehatan_unmet_layanan": -0.5914024652742068,
+        "ketenagakerjaan_formal": 0.5199780835120831,
+        "ketenagakerjaan_informal": 0.6820610982084542,
+        "teknologi_telepon_seluler": 0.6192861230818829,
+        "teknologi_internet": -0.1431249790901277
+      },
+      "p_values": {
+        "ekonomi_miskin": 0.013568691441049996,
+        "ekonomi_upah_rata_rata": 0.25228885086160835,
+        "kesehatan_ahh_perempuan": 0.31392207789236126,
+        "kesehatan_unmet_layanan": 0.34609151512941505,
+        "ketenagakerjaan_formal": 0.08131298112100183,
+        "ketenagakerjaan_informal": 0.016820874428061794,
+        "teknologi_telepon_seluler": 0.058751290638581866,
+        "teknologi_internet": 0.41369621418165736
+      },
+      "intercept": 17.38578720418316,
+      "mae": 7.123314966227878,
+      "r2": 0.0021232487758318097,
+      "adj_r2": -0.31719731161590214,
+      "rmse": 9.949564849146169,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "rata_rata_lama_sekolah": {
+      "coefficients": {
+        "ekonomi_miskin": 0.04606249356461364,
+        "ekonomi_upah_rata_rata": 1.7810307269577885e-05,
+        "kesehatan_ahh_perempuan": -0.07670213563387186,
+        "kesehatan_unmet_layanan": -0.08642702719611428,
+        "ketenagakerjaan_formal": 0.060933596475659116,
+        "ketenagakerjaan_informal": 0.058881326003324005,
+        "teknologi_telepon_seluler": 0.06933448051999588,
+        "teknologi_internet": -0.010965632996156273
+      },
+      "p_values": {
+        "ekonomi_miskin": 0.002349614721609772,
+        "ekonomi_upah_rata_rata": 0.20575066470991898,
+        "kesehatan_ahh_perempuan": 0.07165166216713303,
+        "kesehatan_unmet_layanan": 0.005296953210459865,
+        "ketenagakerjaan_formal": 4.486007273896142e-05,
+        "ketenagakerjaan_informal": 3.45930827418961e-05,
+        "teknologi_telepon_seluler": 2.4210988154749202e-05,
+        "teknologi_internet": 0.19941300535793705
+      },
+      "intercept": 5.556078680713272,
+      "mae": 0.465227110528748,
+      "r2": 0.5350217679090351,
+      "adj_r2": 0.38622873363992627,
+      "rmse": 0.5639678999343287,
+      "n_train": 136,
+      "n_test": 34
+    }
+  },
+  "random_forest": {
+    "apm_sd": {
+      "feature_importance": {
+        "ekonomi_miskin": 0.09664452433866681,
+        "ekonomi_upah_rata_rata": 0.011898124229143107,
+        "kesehatan_ahh_perempuan": 0.1534116982511818,
+        "kesehatan_unmet_layanan": 0.02656425065675537,
+        "ketenagakerjaan_formal": 0.20823760535631577,
+        "ketenagakerjaan_informal": 0.040194045176785966,
+        "teknologi_telepon_seluler": 0.1936950877246761,
+        "teknologi_internet": 0.26935466426647514
+      },
+      "mae": 0.9360176470588015,
+      "r2": 0.4394690580358579,
+      "adj_r2": 0.2600991566073324,
+      "rmse": 1.2871552082013862,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apm_smp": {
+      "feature_importance": {
+        "ekonomi_miskin": 0.1410740064984423,
+        "ekonomi_upah_rata_rata": 0.039338596746116596,
+        "kesehatan_ahh_perempuan": 0.4673340045365656,
+        "kesehatan_unmet_layanan": 0.040018488660876185,
+        "ketenagakerjaan_formal": 0.1093440671849022,
+        "ketenagakerjaan_informal": 0.03547600901613967,
+        "teknologi_telepon_seluler": 0.09152811785211826,
+        "teknologi_internet": 0.07588670950483932
+      },
+      "mae": 2.8897529411764586,
+      "r2": 0.4947622551519777,
+      "adj_r2": 0.3330861768006106,
+      "rmse": 3.9372760649673344,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apm_sm": {
+      "feature_importance": {
+        "ekonomi_miskin": 0.12065099840742176,
+        "ekonomi_upah_rata_rata": 0.06295115545131914,
+        "kesehatan_ahh_perempuan": 0.11941339666906943,
+        "kesehatan_unmet_layanan": 0.1151212202450361,
+        "ketenagakerjaan_formal": 0.10650201406047756,
+        "ketenagakerjaan_informal": 0.11335959382471429,
+        "teknologi_telepon_seluler": 0.20321528202300787,
+        "teknologi_internet": 0.1587863393189538
+      },
+      "mae": 3.275491176470591,
+      "r2": 0.470927433548777,
+      "adj_r2": 0.30162421228438563,
+      "rmse": 4.387596209000476,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "apk_pt": {
+      "feature_importance": {
+        "ekonomi_miskin": 0.2090565969036607,
+        "ekonomi_upah_rata_rata": 0.09598649702438912,
+        "kesehatan_ahh_perempuan": 0.14198979425920868,
+        "kesehatan_unmet_layanan": 0.08458951777554233,
+        "ketenagakerjaan_formal": 0.2756656399108669,
+        "ketenagakerjaan_informal": 0.03834582211316627,
+        "teknologi_telepon_seluler": 0.06381346886806721,
+        "teknologi_internet": 0.09055266314509888
+      },
+      "mae": 5.265188235294117,
+      "r2": 0.2531397752923984,
+      "adj_r2": 0.014144503385965956,
+      "rmse": 8.607663886840815,
+      "n_train": 136,
+      "n_test": 34
+    },
+    "rata_rata_lama_sekolah": {
+      "feature_importance": {
+        "ekonomi_miskin": 0.10376594451394647,
+        "ekonomi_upah_rata_rata": 0.14803995432739242,
+        "kesehatan_ahh_perempuan": 0.04494902695407139,
+        "kesehatan_unmet_layanan": 0.06746524225673853,
+        "ketenagakerjaan_formal": 0.38423110776756497,
+        "ketenagakerjaan_informal": 0.07378894789349058,
+        "teknologi_telepon_seluler": 0.07154677815838834,
+        "teknologi_internet": 0.10621299812840737
+      },
+      "mae": 0.3395088235294111,
+      "r2": 0.7171957150291409,
+      "adj_r2": 0.626698343838466,
+      "rmse": 0.4398261705425421,
+      "n_train": 136,
+      "n_test": 34
+    }
+  }
+}

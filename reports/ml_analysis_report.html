@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Analysis Report: Clustering & Prediction</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            background-color: #FFFFFF;
+            color: #000000;
+            margin: 40px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        h2 {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 5px;
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 11px;
+        }
+        th, td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #F0F0F0;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #F9F9F9;
+        }
+        .metric {
+            display: inline-block;
+            margin: 10px 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+        .metric-label {
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .metric-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #000080;
+        }
+        .abstract {
+            font-style: italic;
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 3px solid #000;
+        }
+        .timestamp {
+            text-align: right;
+            font-size: 10px;
+            color: #666;
+            margin-top: 30px;
+        }
+        .section-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Machine Learning Analysis Report</h1>
+        <h3 style="text-align: center;">Clustering and Prediction of Education Indicators</h3>
+        
+        <div class="abstract">
+            <strong>Abstract:</strong> This study applies K-Means and HDBSCAN clustering algorithms to group provinces based on 9 social indicators and 5 education target indicators. Subsequently, Linear Regression and Random Forest models predict education outcomes using the social indicators. Spearman correlation analysis validates predictor-target relationships. Results are presented with comprehensive metrics including silhouette scores, mean absolute error, R-squared values, and feature importance rankings.
+        </div>
+        
+        
+        <h2>1. K-Means Clustering</h2>
+        
+        <h3>1.1 Optimal K Selection</h3>
+        <div class="section-metrics">
+            <div class="metric">
+                <div class="metric-label">Optimal K</div>
+                <div class="metric-value">2</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Final Silhouette</div>
+                <div class="metric-value">0.3032</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Samples</div>
+                <div class="metric-value">35</div>
+            </div>
+        </div>
+        
+        <h3>1.2 Elbow Method & Silhouette Analysis</h3>
+        <table>
+            <tr>
+                <th>K Value</th>
+                <th>Inertia</th>
+                <th>Silhouette Score</th>
+            </tr>
+            <tr><td>k=2</td><td>347.8992</td><td>0.3032</td></tr><tr><td>k=3</td><td>268.2293</td><td>0.2566</td></tr><tr><td>k=4</td><td>206.7461</td><td>0.2582</td></tr><tr><td>k=5</td><td>178.2860</td><td>0.2285</td></tr><tr><td>k=6</td><td>154.0073</td><td>0.2242</td></tr><tr><td>k=7</td><td>134.2399</td><td>0.1681</td></tr><tr><td>k=8</td><td>124.5297</td><td>0.1543</td></tr><tr><td>k=9</td><td>111.1040</td><td>0.1680</td></tr><tr><td>k=10</td><td>92.7153</td><td>0.1505</td></tr>
+        </table>
+        
+        <h3>1.3 Interpretation</h3>
+        <p>The elbow method identifies k=2 as optimal with silhouette score of 0.3032. 
+        This indicates moderate clustering separation.</p>
+        
+        
+        <h2>2. HDBSCAN Clustering</h2>
+        
+        <div class="section-metrics">
+            <div class="metric">
+                <div class="metric-label">Clusters Found</div>
+                <div class="metric-value">2</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Noise Points</div>
+                <div class="metric-value">12</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Noise Ratio</div>
+                <div class="metric-value">34.29%</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Silhouette</div>
+                <div class="metric-value">0.3494</div>
+            </div>
+        </div>
+        
+        <h3>2.1 Cluster Characteristics</h3>
+        <p><strong>Number of Clusters:</strong> 2</p>
+        <p><strong>Noise Points Detected:</strong> 12 (34.29%)</p>
+        <p><strong>Silhouette Score:</strong> 0.3494</p>
+        <p>HDBSCAN is density-based and automatically determines cluster count. The noise ratio indicates the proportion of outlier points.</p>
+        
+        
+        <h2>3. Spearman Correlation Analysis</h2>
+        
+        <h3>3.1 Correlation Matrix</h3>
+        <p><em>* indicates significant correlation (p &lt; 0.05)</em></p>
+        <table>
+            <tr><th>Target</th><th>Poverty %</th><th>Avg Wage</th><th>LE Male</th><th>LE Female</th><th>Unmet Health %</th><th>Formal Emp %</th><th>Informal Emp %</th><th>Phone %</th><th>Internet %</th></tr>
+            <tr><td><strong>APM SD</strong></td><td style='color: #000000'>-0.242*</td><td style='color: #000000'>-0.269*</td><td style='color: #008000'>0.467*</td><td style='color: #008000'>0.445*</td><td style='color: #000000'>0.044</td><td style='color: #000000'>0.212*</td><td style='color: #000000'>-0.023</td><td style='color: #000000'>0.280*</td><td style='color: #008000'>0.360*</td></tr><tr><td><strong>APM SMP</strong></td><td style='color: #FF0000'>-0.310*</td><td style='color: #000000'>-0.037</td><td style='color: #008000'>0.684*</td><td style='color: #008000'>0.688*</td><td style='color: #000000'>-0.205*</td><td style='color: #008000'>0.445*</td><td style='color: #000000'>-0.179*</td><td style='color: #008000'>0.379*</td><td style='color: #008000'>0.528*</td></tr><tr><td><strong>APM SM</strong></td><td style='color: #000000'>-0.060</td><td style='color: #000000'>-0.005</td><td style='color: #000000'>0.200*</td><td style='color: #000000'>0.165*</td><td style='color: #000000'>-0.235*</td><td style='color: #000000'>0.159*</td><td style='color: #000000'>-0.086</td><td style='color: #000000'>0.236*</td><td style='color: #000000'>0.287*</td></tr><tr><td><strong>APK PT</strong></td><td style='color: #000000'>0.135</td><td style='color: #000000'>0.062</td><td style='color: #000000'>-0.123</td><td style='color: #000000'>-0.164*</td><td style='color: #000000'>-0.056</td><td style='color: #000000'>-0.069</td><td style='color: #000000'>0.052</td><td style='color: #000000'>0.042</td><td style='color: #000000'>-0.037</td></tr><tr><td><strong>Avg Years School</strong></td><td style='color: #000000'>-0.244*</td><td style='color: #008000'>0.505*</td><td style='color: #000000'>0.229*</td><td style='color: #000000'>0.209*</td><td style='color: #FF0000'>-0.483*</td><td style='color: #008000'>0.520*</td><td style='color: #FF0000'>-0.450*</td><td style='color: #008000'>0.541*</td><td style='color: #008000'>0.397*</td></tr>
+        </table>
+        
+        <h3>3.2 Interpretation</h3>
+        <p>Spearman correlation coefficient ranges from -1 to +1. Values closer to ±1 indicate stronger relationships.</p>
+        <p>Strong positive correlations (|r| > 0.5) suggest direct relationships between predictors and education outcomes.</p>
+        
+        
+        <h2>4. Linear Regression Analysis</h2>
+        
+        <p>Linear Regression models were trained for each education target using 8 social predictors (80% train, 20% test).</p>
+        
+        
+            <h3>4.1 APM SD (MAE: 1.3666, R²: 0.0693)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Coefficient</th></tr>
+                <tr><td>LE Male</td><td>0.571923</td></tr><tr><td>Informal Emp %</td><td>0.325374</td></tr><tr><td>Unmet Health %</td><td>0.268726</td></tr><tr><td>Formal Emp %</td><td>0.259933</td></tr><tr><td>Phone %</td><td>0.187657</td></tr><tr><td>LE Female</td><td>-0.099491</td></tr><tr><td>Internet %</td><td>-0.070839</td></tr><tr><td>Poverty %</td><td>0.051197</td></tr><tr><td>Avg Wage</td><td>-0.000222</td></tr>
+            </table>
+            
+            <h3>4.1 APM SMP (MAE: 2.9249, R²: 0.5803)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Coefficient</th></tr>
+                <tr><td>LE Female</td><td>0.946503</td></tr><tr><td>Informal Emp %</td><td>0.530474</td></tr><tr><td>LE Male</td><td>0.509050</td></tr><tr><td>Formal Emp %</td><td>0.460157</td></tr><tr><td>Poverty %</td><td>0.385673</td></tr><tr><td>Phone %</td><td>0.244051</td></tr><tr><td>Unmet Health %</td><td>-0.164299</td></tr><tr><td>Internet %</td><td>-0.085948</td></tr><tr><td>Avg Wage</td><td>-0.000169</td></tr>
+            </table>
+            
+            <h3>4.1 APM SM (MAE: 3.4410, R²: 0.3009)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Coefficient</th></tr>
+                <tr><td>LE Female</td><td>-2.971531</td></tr><tr><td>LE Male</td><td>2.659754</td></tr><tr><td>Unmet Health %</td><td>-1.046830</td></tr><tr><td>Formal Emp %</td><td>0.301432</td></tr><tr><td>Phone %</td><td>0.295979</td></tr><tr><td>Informal Emp %</td><td>0.268909</td></tr><tr><td>Poverty %</td><td>0.197578</td></tr><tr><td>Internet %</td><td>0.078828</td></tr><tr><td>Avg Wage</td><td>-0.000483</td></tr>
+            </table>
+            
+            <h3>4.1 APK PT (MAE: 5.6399, R²: 0.2278)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Coefficient</th></tr>
+                <tr><td>LE Male</td><td>17.190947</td></tr><tr><td>LE Female</td><td>-14.680649</td></tr><tr><td>Informal Emp %</td><td>0.758744</td></tr><tr><td>Unmet Health %</td><td>-0.657680</td></tr><tr><td>Poverty %</td><td>0.542602</td></tr><tr><td>Phone %</td><td>0.256581</td></tr><tr><td>Formal Emp %</td><td>0.238800</td></tr><tr><td>Internet %</td><td>0.147387</td></tr><tr><td>Avg Wage</td><td>0.000522</td></tr>
+            </table>
+            
+            <h3>4.1 Avg Years School (MAE: 0.3392, R²: 0.7228)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Coefficient</th></tr>
+                <tr><td>LE Female</td><td>-0.306839</td></tr><tr><td>LE Male</td><td>0.283543</td></tr><tr><td>Unmet Health %</td><td>-0.098414</td></tr><tr><td>Phone %</td><td>0.065068</td></tr><tr><td>Informal Emp %</td><td>0.064280</td></tr><tr><td>Formal Emp %</td><td>0.054571</td></tr><tr><td>Poverty %</td><td>0.048614</td></tr><tr><td>Internet %</td><td>-0.002760</td></tr><tr><td>Avg Wage</td><td>0.000034</td></tr>
+            </table>
+            
+        
+        <h3>4.1 Model Quality Metrics</h3>
+        <table>
+            <tr><th>Target</th><th>MAE</th><th>R²</th><th>RMSE</th></tr>
+            <tr><td>APM SD</td><td>1.3666</td><td>0.0693</td><td>1.5978</td></tr><tr><td>APM SMP</td><td>2.9249</td><td>0.5803</td><td>3.7009</td></tr><tr><td>APM SM</td><td>3.4410</td><td>0.3009</td><td>4.2157</td></tr><tr><td>APK PT</td><td>5.6399</td><td>0.2278</td><td>7.6015</td></tr><tr><td>Avg Years School</td><td>0.3392</td><td>0.7228</td><td>0.4182</td></tr>
+        </table>
+        
+        
+        <h2>5. Random Forest Prediction</h2>
+        
+        <p>Random Forest models with 100 estimators were trained for each education target (80% train, 20% test).</p>
+        
+        
+            <h3>5.1 APM SD (MAE: 0.8666, R²: 0.5166)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Importance</th></tr>
+                <tr><td>Phone %</td><td>0.2543</td></tr><tr><td>Formal Emp %</td><td>0.1694</td></tr><tr><td>Internet %</td><td>0.1532</td></tr><tr><td>LE Male</td><td>0.1457</td></tr><tr><td>LE Female</td><td>0.1108</td></tr><tr><td>Poverty %</td><td>0.0809</td></tr><tr><td>Informal Emp %</td><td>0.0540</td></tr><tr><td>Avg Wage</td><td>0.0180</td></tr><tr><td>Unmet Health %</td><td>0.0137</td></tr>
+            </table>
+            
+            <h3>5.1 APM SMP (MAE: 2.6114, R²: 0.6767)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Importance</th></tr>
+                <tr><td>LE Male</td><td>0.2435</td></tr><tr><td>Formal Emp %</td><td>0.2211</td></tr><tr><td>LE Female</td><td>0.1311</td></tr><tr><td>Poverty %</td><td>0.1272</td></tr><tr><td>Phone %</td><td>0.1037</td></tr><tr><td>Informal Emp %</td><td>0.0475</td></tr><tr><td>Avg Wage</td><td>0.0454</td></tr><tr><td>Internet %</td><td>0.0415</td></tr><tr><td>Unmet Health %</td><td>0.0390</td></tr>
+            </table>
+            
+            <h3>5.1 APM SM (MAE: 2.2982, R²: 0.6550)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Importance</th></tr>
+                <tr><td>Phone %</td><td>0.1819</td></tr><tr><td>Informal Emp %</td><td>0.1256</td></tr><tr><td>Formal Emp %</td><td>0.1244</td></tr><tr><td>Unmet Health %</td><td>0.1210</td></tr><tr><td>Poverty %</td><td>0.1188</td></tr><tr><td>Internet %</td><td>0.1057</td></tr><tr><td>LE Male</td><td>0.0813</td></tr><tr><td>Avg Wage</td><td>0.0770</td></tr><tr><td>LE Female</td><td>0.0644</td></tr>
+            </table>
+            
+            <h3>5.1 APK PT (MAE: 2.1036, R²: 0.9071)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Importance</th></tr>
+                <tr><td>LE Male</td><td>0.4870</td></tr><tr><td>Formal Emp %</td><td>0.1605</td></tr><tr><td>Avg Wage</td><td>0.0722</td></tr><tr><td>Poverty %</td><td>0.0708</td></tr><tr><td>LE Female</td><td>0.0672</td></tr><tr><td>Unmet Health %</td><td>0.0617</td></tr><tr><td>Informal Emp %</td><td>0.0388</td></tr><tr><td>Phone %</td><td>0.0271</td></tr><tr><td>Internet %</td><td>0.0149</td></tr>
+            </table>
+            
+            <h3>5.1 Avg Years School (MAE: 0.2328, R²: 0.8410)</h3>
+            <table>
+                <tr><th>Predictor</th><th>Importance</th></tr>
+                <tr><td>Formal Emp %</td><td>0.4011</td></tr><tr><td>Avg Wage</td><td>0.1760</td></tr><tr><td>Poverty %</td><td>0.0991</td></tr><tr><td>Internet %</td><td>0.0849</td></tr><tr><td>Unmet Health %</td><td>0.0622</td></tr><tr><td>Phone %</td><td>0.0604</td></tr><tr><td>Informal Emp %</td><td>0.0473</td></tr><tr><td>LE Female</td><td>0.0397</td></tr><tr><td>LE Male</td><td>0.0293</td></tr>
+            </table>
+            
+        
+        <h3>5.1 Model Quality Metrics</h3>
+        <table>
+            <tr><th>Target</th><th>MAE</th><th>R²</th><th>RMSE</th></tr>
+            <tr><td>APM SD</td><td>0.8666</td><td>0.5166</td><td>1.1515</td></tr><tr><td>APM SMP</td><td>2.6114</td><td>0.6767</td><td>3.2480</td></tr><tr><td>APM SM</td><td>2.2982</td><td>0.6550</td><td>2.9616</td></tr><tr><td>APK PT</td><td>2.1036</td><td>0.9071</td><td>2.6366</td></tr><tr><td>Avg Years School</td><td>0.2328</td><td>0.8410</td><td>0.3167</td></tr>
+        </table>
+        
+        
+        <h2>6. Model Comparison</h2>
+        
+        <table>
+            <tr>
+                <th>Target</th>
+                <th>LR MAE</th>
+                <th>RF MAE</th>
+                <th>Better</th>
+                <th>LR R²</th>
+                <th>RF R²</th>
+                <th>Better</th>
+            </tr>
+            
+            <tr>
+                <td>APM SD</td>
+                <td>1.3666</td>
+                <td>0.8666</td>
+                <td><strong>RF</strong></td>
+                <td>0.0693</td>
+                <td>0.5166</td>
+                <td><strong>RF</strong></td>
+            </tr>
+            
+            <tr>
+                <td>APM SMP</td>
+                <td>2.9249</td>
+                <td>2.6114</td>
+                <td><strong>RF</strong></td>
+                <td>0.5803</td>
+                <td>0.6767</td>
+                <td><strong>RF</strong></td>
+            </tr>
+            
+            <tr>
+                <td>APM SM</td>
+                <td>3.4410</td>
+                <td>2.2982</td>
+                <td><strong>RF</strong></td>
+                <td>0.3009</td>
+                <td>0.6550</td>
+                <td><strong>RF</strong></td>
+            </tr>
+            
+            <tr>
+                <td>APK PT</td>
+                <td>5.6399</td>
+                <td>2.1036</td>
+                <td><strong>RF</strong></td>
+                <td>0.2278</td>
+                <td>0.9071</td>
+                <td><strong>RF</strong></td>
+            </tr>
+            
+            <tr>
+                <td>Avg Years School</td>
+                <td>0.3392</td>
+                <td>0.2328</td>
+                <td><strong>RF</strong></td>
+                <td>0.7228</td>
+                <td>0.8410</td>
+                <td><strong>RF</strong></td>
+            </tr>
+            
+        </table>
+        
+        
+        <h2>7. Conclusions</h2>
+        
+        <h3>7.1 Clustering Findings</h3>
+        <ul>
+            <li>K-Means identified 2 optimal clusters with silhouette score 0.3032</li>
+            <li>HDBSCAN found 2 clusters with 34.29% noise points</li>
+        </ul>
+        
+        <h3>7.2 Prediction Findings</h3>
+        <ul>
+            <li>Linear Regression average R²: 0.3802</li>
+            <li>Random Forest average R²: 0.7193</li>
+            <li>Spearman analysis reveals strong predictor-target relationships</li>
+        </ul>
+        
+        <h3>7.3 Recommendations</h3>
+        <p>The Random Forest model provides better predictive performance. 
+        Clustering analysis suggests provinces can be effectively grouped by socio-economic indicators.</p>
+        
+        
+        <div class="timestamp">
+            Generated: 2026-04-22 11:45:25
+        </div>
+    </div>
+</body>
+</html>
