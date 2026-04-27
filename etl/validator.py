@@ -35,11 +35,12 @@ FACT_INTEGRITY_SQL = """
 SELECT 
     'fact_indikator' as table_name,
     COUNT(*) as total_rows,
-    COUNT(DISTINCT tahun_id) as unique_years,
-    COUNT(DISTINCT provinsi_id) as unique_provinces,
-    COUNT(DISTINCT indikator_id) as unique_indicators,
-    COUNT(CASE WHEN nilai IS NULL THEN 1 END) as null_values
-FROM dw.fact_indikator;
+    COUNT(DISTINCT f.tahun_id) as unique_years,
+    COUNT(DISTINCT f.provinsi_id) as unique_provinces,
+    COUNT(DISTINCT d.indikator_id) as unique_indicators,
+    COUNT(CASE WHEN f.nilai IS NULL THEN 1 END) as null_values
+FROM dw.fact_indikator f
+JOIN dw.dim_indikator_dimensi d ON f.indikator_dimensi_id = d.indikator_dimensi_id;
 """
 
 STAGING_NULL_CHECK_SQL = """

@@ -5,7 +5,7 @@ import numpy as np
 from sqlalchemy import create_engine
 from config.db_config import PSQL_CONNECTION_STRING
 from utils.logger import get_logger
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler, StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 import hdbscan
@@ -35,10 +35,14 @@ class MLPipeline:
         
         # For clustering table (aggregated by province)
         self.predictor_cols_clustering = [
-            'ekonomi_miskin_mean', 'ekonomi_upah_mean',
-            'kesehatan_ahh_perempuan_mean', 'kesehatan_unmet_mean',
-            'ketenagakerjaan_formal_mean', 'ketenagakerjaan_informal_mean',
-            'teknologi_telepon_mean', 'teknologi_internet_mean'
+            'ekonomi_miskin_mean', 'ekonomi_miskin_trend_pct',
+            'ekonomi_upah_mean', 'ekonomi_upah_trend_pct',
+            'kesehatan_ahh_perempuan_mean', 'kesehatan_ahh_perempuan_trend_pct',
+            'kesehatan_unmet_mean', 'kesehatan_unmet_trend_pct',
+            'ketenagakerjaan_formal_mean', 'ketenagakerjaan_formal_trend_pct',
+            'ketenagakerjaan_informal_mean', 'ketenagakerjaan_informal_trend_pct',
+            'teknologi_telepon_mean', 'teknologi_telepon_trend_pct',
+            'teknologi_internet_mean', 'teknologi_internet_trend_pct'
         ]
         
         self.target_cols_clustering = [
@@ -65,12 +69,51 @@ class MLPipeline:
         except Exception as e:
             logger.warning(f"Could not load {self.config_path}, using defaults: {e}")
             return {
+                "feature_selection": {
+                    "correlation_threshold": 0.4,
+                    "method": "correlation"
+                },
                 "clustering": {
-                    "kmeans": {"max_k": 8, "random_state": 42},
+                    "kmeans": {"max_k": 8, "random_state": 42, "elbow_method": True},
                     "hdbscan": {"min_cluster_size": 2, "min_samples": 1}
                 },
                 "overrides": {}
             }
+    
+    def _select_features_by_correlation(self, X, target_col, threshold=0.4):
+        """Select features based on spearman correlation with target column (abs value >= threshold)"""
+        correlations = {}
+        selected_features = []
+        
+        for col in X.columns:
+            if col != target_col:
+                corr = X[col].corr(X[target_col], method='spearman')
+                correlations[col] = float(corr)
+                if abs(corr) >= threshold:
+                    selected_features.append(col)
+        
+        return selected_features, correlations
+    
+    def _find_elbow_k(self, inertias, k_range):
+        """Find elbow point using curvature method"""
+        inertias = np.array(inertias)
+        k_range = np.array(list(k_range))
+        
+        # Calculate differences
+        d1 = np.diff(inertias)
+        d2 = np.diff(d1)
+        
+        # Find the point with maximum curvature (largest second difference)
+        # This indicates the elbow where diminishing returns start
+        elbow_idx = np.argmax(d2) + 1
+        
+        # Ensure we pick a valid k (at least 2)
+        optimal_k = max(2, k_range[elbow_idx])
+        
+        logger.info(f"  Elbow method detected optimal K: {optimal_k}")
+        logger.info(f"  Inertias by K: {dict(zip(k_range, [f'{x:.2f}' for x in inertias]))}")
+        
+        return optimal_k
         
     def load_data(self):
         """Load clustering and timeseries data, excluding INDONESIA (national level)"""
@@ -87,23 +130,52 @@ class MLPipeline:
         
         return self.clustering_df, self.timeseries_df
     
-    def kmeans_clustering(self, max_k=10):
-        """Global K-Means with elbow and silhouette analysis"""
+    def kmeans_clustering(self, max_k=None):
+        """Global K-Means with elbow method and feature selection based on correlation"""
         logger.info("\n" + "="*80)
-        logger.info("GLOBAL K-MEANS CLUSTERING")
+        logger.info("GLOBAL K-MEANS CLUSTERING (with Elbow Method & Correlation-based Feature Selection)")
         logger.info("="*80)
         
-        X = self.clustering_df[self.predictor_cols_clustering + self.target_cols_clustering].copy()
+        # Get correlation threshold from config
+        corr_threshold = self.ml_config.get('feature_selection', {}).get('correlation_threshold', 0.4)
+        if max_k is None:
+            max_k = self.ml_config.get('clustering', {}).get('kmeans', {}).get('max_k', 8)
+        
+        # Prepare data
+        all_cols = self.predictor_cols_clustering + self.target_cols_clustering
+        X = self.clustering_df[all_cols].copy()
         X = X.dropna()
         
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+        # Select features based on correlation with targets
+        logger.info(f"Selecting features with correlation threshold: ±{corr_threshold}")
+        selected_features = set()
+        correlation_details = {}
         
+        for target_col in self.target_cols_clustering:
+            features, corrs = self._select_features_by_correlation(X, target_col, corr_threshold)
+            selected_features.update(features)
+            correlation_details[target_col] = corrs
+            logger.info(f"  {target_col}: selected {len(features)} features - {features}")
+        
+        # If no features selected, use all predictors as fallback
+        if not selected_features:
+            selected_features = self.predictor_cols_clustering
+            logger.warning("  No features met correlation threshold, using all predictors")
+        
+        selected_features = list(selected_features)
+        logger.info(f"Total selected features: {selected_features}")
+        
+        X_selected = X[selected_features].copy()
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X_selected)
+        
+        # Use elbow method to find optimal k
         inertias = []
         silhouette_scores = []
         davies_bouldin_scores = []
         K_range = range(2, max_k + 1)
         
+        logger.info("Running K-Means for different K values...")
         for k in K_range:
             kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
             kmeans.fit(X_scaled)
@@ -111,40 +183,69 @@ class MLPipeline:
             silhouette_scores.append(silhouette_score(X_scaled, kmeans.labels_))
             davies_bouldin_scores.append(davies_bouldin_score(X_scaled, kmeans.labels_))
         
-        optimal_k = K_range[np.argmax(silhouette_scores)]
+        # Determine optimal k using elbow method
+        optimal_k = self._find_elbow_k(inertias, K_range)
         
-        logger.info(f"Optimal K: {optimal_k} (silhouette: {max(silhouette_scores):.4f})")
-        
+        # Fit final model with optimal k
         kmeans_final = KMeans(n_clusters=optimal_k, random_state=42, n_init=10)
         labels = kmeans_final.fit_predict(X_scaled)
         final_silhouette = silhouette_score(X_scaled, labels)
         
         self.results['kmeans'] = {
             'optimal_k': int(optimal_k),
+            'selected_features': selected_features,
+            'correlation_threshold': corr_threshold,
+            'feature_correlations': correlation_details,
             'inertias': [float(x) for x in inertias],
             'silhouette_scores': [float(x) for x in silhouette_scores],
             'davies_bouldin_scores': [float(x) for x in davies_bouldin_scores],
             'final_silhouette': float(final_silhouette),
             'labels': labels.tolist(),
             'n_samples': len(X),
+            'n_features': len(selected_features),
             'k_range': list(K_range),
             'provinces': self.clustering_df.iloc[X.index]['provinsi'].tolist() if 'provinsi' in self.clustering_df.columns else None
         }
         
-        logger.info(f"Final silhouette: {final_silhouette:.4f}")
+        logger.info(f"Optimal K: {optimal_k}, Final silhouette: {final_silhouette:.4f}")
         return self.results['kmeans']
     
     def hdbscan_clustering(self, min_cluster_size=2):
-        """Global HDBSCAN clustering"""
+        """Global HDBSCAN clustering with feature selection based on correlation"""
         logger.info("\n" + "="*80)
-        logger.info("GLOBAL HDBSCAN CLUSTERING")
+        logger.info("GLOBAL HDBSCAN CLUSTERING (with Correlation-based Feature Selection)")
         logger.info("="*80)
         
-        X = self.clustering_df[self.predictor_cols_clustering + self.target_cols_clustering].copy()
+        # Get correlation threshold from config
+        corr_threshold = self.ml_config.get('feature_selection', {}).get('correlation_threshold', 0.5)
+        
+        # Prepare data
+        all_cols = self.predictor_cols_clustering + self.target_cols_clustering
+        X = self.clustering_df[all_cols].copy()
         X = X.dropna()
         
+        # Select features based on correlation with targets
+        logger.info(f"Selecting features with correlation threshold: ±{corr_threshold}")
+        selected_features = set()
+        correlation_details = {}
+        
+        for target_col in self.target_cols_clustering:
+            features, corrs = self._select_features_by_correlation(X, target_col, corr_threshold)
+            selected_features.update(features)
+            correlation_details[target_col] = corrs
+            logger.info(f"  {target_col}: selected {len(features)} features - {features}")
+        
+        # If no features selected, use all predictors as fallback
+        if not selected_features:
+            selected_features = self.predictor_cols_clustering
+            logger.warning("  No features met correlation threshold, using all predictors")
+        
+        selected_features = list(selected_features)
+        logger.info(f"Total selected features: {selected_features}")
+        
+        X_selected = X[selected_features].copy()
         scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+        X_scaled = scaler.fit_transform(X_selected)
         
         clusterer = hdbscan.HDBSCAN(min_cluster_size=min_cluster_size, min_samples=1)
         labels = clusterer.fit_predict(X_scaled)
@@ -167,8 +268,12 @@ class MLPipeline:
             'n_noise': int(n_noise),
             'noise_ratio': float(noise_ratio),
             'silhouette_score': float(silhouette),
+            'selected_features': selected_features,
+            'correlation_threshold': corr_threshold,
+            'feature_correlations': correlation_details,
             'labels': labels.tolist(),
             'n_samples': len(X),
+            'n_features': len(selected_features),
             'provinces': self.clustering_df.iloc[X.index]['provinsi'].tolist() if 'provinsi' in self.clustering_df.columns else None
         }
         
@@ -203,9 +308,9 @@ class MLPipeline:
         return stats
 
     def run_per_target_clustering(self):
-        """Run K-Means and HDBSCAN for each target indicator independently using config settings"""
+        """Run K-Means and HDBSCAN for each target indicator independently using elbow method and feature selection"""
         logger.info("\n" + "="*80)
-        logger.info("INDEPENDENT PER-TARGET CLUSTERING ANALYSIS (FINE-TUNABLE)")
+        logger.info("INDEPENDENT PER-TARGET CLUSTERING ANALYSIS (Elbow Method & Correlation-based Feature Selection)")
         logger.info("="*80)
         
         self.results['per_target_clustering'] = {}
@@ -214,6 +319,8 @@ class MLPipeline:
         cl_cfg = self.ml_config.get('clustering', {})
         km_cfg = cl_cfg.get('kmeans', {"max_k": 8, "random_state": 42})
         hdb_cfg = cl_cfg.get('hdbscan', {"min_cluster_size": 2, "min_samples": 1})
+        fs_cfg = self.ml_config.get('feature_selection', {})
+        corr_threshold = fs_cfg.get('correlation_threshold', 0.4)
         
         for target_mean_col in self.target_cols_clustering:
             target_name = target_mean_col.replace('_mean', '')
@@ -225,9 +332,38 @@ class MLPipeline:
             # Prepare data
             cols = self.predictor_cols_clustering + [target_mean_col]
             X = self.clustering_df[cols].copy().dropna()
-            scaler = StandardScaler(); X_scaled = scaler.fit_transform(X)
             
-            # K-Means: Use manual override if provided, else search up to max_k
+            # Select features based on correlation threshold
+            logger.info(f"Selecting features with correlation threshold: ±{corr_threshold}")
+            selected_features, correlations = self._select_features_by_correlation(X, target_mean_col, corr_threshold)
+            
+            if not selected_features:
+                # Fallback: Pick top 3 strongest correlations if none meet threshold
+                sorted_preds = sorted(correlations.items(), key=lambda x: abs(x[1]), reverse=True)
+                selected_features = [p[0] for p in sorted_preds[:3]]
+                logger.info(f"  No features met threshold ({corr_threshold}), using top 3 strongest: {selected_features}")
+            else:
+                logger.info(f"  Selected features meeting ±{corr_threshold}: {selected_features}")
+            
+            X_selected = X[selected_features].copy()
+            # RobustScaler handles outliers (like DKI Jakarta) much better than StandardScaler
+            scaler = RobustScaler()
+            X_scaled = scaler.fit_transform(X_selected)
+            
+            # Target weighting: boost the education indicator's influence on clustering
+            # This helps align clusters more closely with the target outcome
+            target_idx = -1 # Target is always the last column in X (but not in X_selected yet)
+            # Actually X_selected only contains predictors. We need to include target in the scaling
+            X_combined = X[selected_features + [target_mean_col]].copy()
+            X_combined_scaled = scaler.fit_transform(X_combined)
+            
+            # Apply weight to target (the last column)
+            X_combined_scaled[:, -1] = X_combined_scaled[:, -1] * 1.5
+            
+            # Use X_combined_scaled for clustering
+            X_for_clustering = X_combined_scaled
+            
+            # K-Means with elbow method
             manual_k = overrides.get('kmeans_k')
             if manual_k:
                 best_k = manual_k
@@ -242,37 +378,44 @@ class MLPipeline:
                 inertias, silhouettes = [], []
                 for k in k_range:
                     km = KMeans(n_clusters=k, random_state=km_cfg.get('random_state', 42), n_init=10)
-                    labels = km.fit_predict(X_scaled)
-                    inertias.append(km.inertia_); silhouettes.append(silhouette_score(X_scaled, labels))
+                    labels = km.fit_predict(X_for_clustering)
+                    inertias.append(km.inertia_)
+                    silhouettes.append(silhouette_score(X_for_clustering, labels))
                 
-                opt_idx = np.argmax(silhouettes)
-                best_k, best_inertia, best_silhouette = k_range[opt_idx], inertias[opt_idx], silhouettes[opt_idx]
+                # Use elbow method to find optimal k
+                best_k = self._find_elbow_k(inertias, k_range)
                 km_final = KMeans(n_clusters=best_k, random_state=km_cfg.get('random_state', 42), n_init=10)
-                km_labels = km_final.fit_predict(X_scaled)
-                logger.info(f"  K-Means (Optimal Search): k={best_k}")
+                km_labels = km_final.fit_predict(X_for_clustering)
+                best_inertia = km_final.inertia_
+                best_silhouette = silhouette_score(X_for_clustering, km_labels)
+                logger.info(f"  K-Means (Elbow Method): k={best_k}")
             
-            # HDBSCAN: Use override or defaults
+            # HDBSCAN: Use override or defaults, with feature selection
             min_c_size = overrides.get('hdbscan_min_cluster_size') or hdb_cfg.get('min_cluster_size', 2)
             clusterer = hdbscan.HDBSCAN(
                 min_cluster_size=min_c_size, 
                 min_samples=hdb_cfg.get('min_samples', 1),
                 cluster_selection_epsilon=hdb_cfg.get('cluster_selection_epsilon', 0.0)
             )
-            hdb_labels = clusterer.fit_predict(X_scaled)
+            hdb_labels = clusterer.fit_predict(X_for_clustering)
             
             hdb_n_clusters = len(set(hdb_labels)) - (1 if -1 in hdb_labels else 0)
             hdb_n_noise = list(hdb_labels).count(-1)
             hdb_noise_ratio = hdb_n_noise / len(hdb_labels)
-            hdb_silhouette = silhouette_score(X_scaled[hdb_labels != -1], hdb_labels[hdb_labels != -1]) if hdb_n_clusters > 1 else -1.0
-                
+            hdb_silhouette = silhouette_score(X_for_clustering[hdb_labels != -1], hdb_labels[hdb_labels != -1]) if hdb_n_clusters > 1 else -1.0
+            
             # Store results
             target_results = {
+                'selected_features': selected_features,
+                'n_selected_features': len(selected_features),
+                'correlation_threshold': corr_threshold,
+                'feature_correlations': correlations,
                 'kmeans': {
                     'n_clusters': int(best_k),
                     'inertia': float(best_inertia),
                     'silhouette': float(best_silhouette),
                     'labels': km_labels.tolist(),
-                    'stats': self._calculate_cluster_stats(X, km_labels, best_k)
+                    'stats': self._calculate_cluster_stats(X[self.predictor_cols_clustering + [target_mean_col]], km_labels, best_k)
                 },
                 'hdbscan': {
                     'n_clusters': int(hdb_n_clusters),
@@ -280,7 +423,7 @@ class MLPipeline:
                     'noise_ratio': float(hdb_noise_ratio),
                     'silhouette': float(hdb_silhouette),
                     'labels': hdb_labels.tolist(),
-                    'stats': self._calculate_cluster_stats(X, hdb_labels, hdb_n_clusters, include_noise=True)
+                    'stats': self._calculate_cluster_stats(X[self.predictor_cols_clustering + [target_mean_col]], hdb_labels, hdb_n_clusters, include_noise=True)
                 },
                 'n_samples': len(X),
                 'provinces': self.clustering_df.iloc[X.index]['provinsi'].tolist()
@@ -289,6 +432,7 @@ class MLPipeline:
             self.results['per_target_clustering'][target_name] = target_results
             logger.info(f"  K-Means Optimal K={best_k}: Inertia={best_inertia:.2f}, Silhouette={best_silhouette:.4f}")
             logger.info(f"  HDBSCAN: Clusters={hdb_n_clusters}, Noise Ratio={hdb_noise_ratio:.4f}, Silhouette={hdb_silhouette:.4f}")
+
     
     def kmeans_cluster_statistics(self):
         """Global K-Means cluster statistics"""
@@ -366,6 +510,17 @@ class MLPipeline:
             y = df[target]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             
+            # Optional scaling
+            pred_cfg = self.ml_config.get('prediction', {})
+            if pred_cfg.get('use_scaling', False):
+                scaler_type = pred_cfg.get('scaler_type', 'robust')
+                scaler = RobustScaler() if scaler_type == 'robust' else StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_test = scaler.transform(X_test)
+                # Re-convert to array if needed for p-value calculation
+                X_train = np.array(X_train)
+                X_test = np.array(X_test)
+            
             model = LinearRegression()
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
@@ -419,6 +574,14 @@ class MLPipeline:
             y = df[target]
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             
+            # Optional scaling
+            pred_cfg = self.ml_config.get('prediction', {})
+            if pred_cfg.get('use_scaling', False):
+                scaler_type = pred_cfg.get('scaler_type', 'robust')
+                scaler = RobustScaler() if scaler_type == 'robust' else StandardScaler()
+                X_train = scaler.fit_transform(X_train)
+                X_test = scaler.transform(X_test)
+            
             model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
             model.fit(X_train, y_train)
             y_pred = model.predict(X_test)
@@ -452,7 +615,7 @@ class MLPipeline:
         self.kmeans_cluster_statistics()
         self.hdbscan_clustering()
         self.hdbscan_cluster_statistics()
-        self.run_per_target_clustering(n_kmeans_clusters=5)
+        self.run_per_target_clustering()
         self.spearman_correlation()
         self.linear_regression()
         self.random_forest()

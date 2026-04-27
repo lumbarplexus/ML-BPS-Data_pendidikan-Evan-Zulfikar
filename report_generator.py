@@ -23,7 +23,7 @@ import seaborn as sns
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['font.serif'] = ['Times New Roman']
 plt.rcParams['axes.unicode_minus'] = False
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LinearRegression
 from sklearn.decomposition import PCA
@@ -49,6 +49,13 @@ class EnhancedReportGenerator:
         except Exception as e:
             logger.warning(f"Could not load ML results: {e}")
             self.results = {}
+        
+        # Load ML config for scaling settings
+        try:
+            with open('config/ml_config.json', 'r') as f:
+                self.ml_config = json.load(f)
+        except:
+            self.ml_config = {}
         
         # Connect to database
         self.engine = create_engine(PSQL_CONNECTION_STRING)
@@ -84,21 +91,33 @@ class EnhancedReportGenerator:
             'teknologi_internet': 'PAIN (%)',
             # Add mean versions for clustering tables
             'ekonomi_miskin_mean': 'PPM (%) Mean',
+            'ekonomi_miskin_trend_pct': 'PPM Trend (%)',
             'ekonomi_upah_mean': 'URPJ Mean',
+            'ekonomi_upah_trend_pct': 'URPJ Trend (%)',
             'kesehatan_ahh_perempuan_mean': 'AHH Mean',
+            'kesehatan_ahh_perempuan_trend_pct': 'AHH Trend (%)',
             'kesehatan_unmet_mean': 'PUPK (%) Mean',
+            'kesehatan_unmet_trend_pct': 'PUPK Trend (%)',
             'ketenagakerjaan_formal_mean': 'PTKF (%) Mean',
+            'ketenagakerjaan_formal_trend_pct': 'PTKF Trend (%)',
             'ketenagakerjaan_informal_mean': 'PTKIN (%) Mean',
+            'ketenagakerjaan_informal_trend_pct': 'PTKIN Trend (%)',
             'teknologi_telepon_mean': 'PMTS (%) Mean',
-            'teknologi_internet_mean': 'PAIN (%) Mean'
+            'teknologi_telepon_trend_pct': 'PMTS Trend (%)',
+            'teknologi_internet_mean': 'PAIN (%) Mean',
+            'teknologi_internet_trend_pct': 'PAIN Trend (%)'
         }
         
         # Clustering columns
         self.predictor_cols_clustering = [
-            'ekonomi_miskin_mean', 'ekonomi_upah_mean',
-            'kesehatan_ahh_perempuan_mean', 'kesehatan_unmet_mean',
-            'ketenagakerjaan_formal_mean', 'ketenagakerjaan_informal_mean',
-            'teknologi_telepon_mean', 'teknologi_internet_mean'
+            'ekonomi_miskin_mean', 'ekonomi_miskin_trend_pct',
+            'ekonomi_upah_mean', 'ekonomi_upah_trend_pct',
+            'kesehatan_ahh_perempuan_mean', 'kesehatan_ahh_perempuan_trend_pct',
+            'kesehatan_unmet_mean', 'kesehatan_unmet_trend_pct',
+            'ketenagakerjaan_formal_mean', 'ketenagakerjaan_formal_trend_pct',
+            'ketenagakerjaan_informal_mean', 'ketenagakerjaan_informal_trend_pct',
+            'teknologi_telepon_mean', 'teknologi_telepon_trend_pct',
+            'teknologi_internet_mean', 'teknologi_internet_trend_pct'
         ]
         
         self.target_cols_clustering = [
@@ -167,6 +186,9 @@ class EnhancedReportGenerator:
                         else: row_data[str(year)] = 'N/A'
                     row_data['mean'] = round(np.mean(corrs), 3) if corrs else 'N/A'
                     rows.append(row_data)
+                # Sort rows by mean correlation (highest to lowest)
+                rows.sort(key=lambda x: x['mean'] if isinstance(x['mean'], (int, float)) else -999, reverse=True)
+                
                 df_corr = pd.DataFrame(rows)
                 html = '<table><thead><tr><th>Variabel</th>'
                 for y in years: html += f'<th>{y}</th>'
@@ -182,6 +204,46 @@ class EnhancedReportGenerator:
             return tables_html
         except Exception as e: return {}
     
+    def generate_trend_correlation_table(self):
+        """Generate correlation table specifically for trend features"""
+        if self.df_clustering is None: return ""
+        try:
+            # Predictor trend columns
+            trend_preds = [c for c in self.predictor_cols_clustering if '_trend_pct' in c]
+            
+            rows = []
+            for pred in trend_preds:
+                row_data = {'Variable': self.predictor_short_names.get(pred, pred)}
+                for target_col in self.target_cols_clustering:
+                    target_name = self.target_names.get(target_col.replace('_mean', ''), target_col)
+                    y_data = self.df_clustering[[pred, target_col]].dropna()
+                    if len(y_data) > 2:
+                        c, _ = spearmanr(y_data[pred], y_data[target_col])
+                        row_data[target_name] = round(c, 3)
+                    else: row_data[target_name] = 'N/A'
+                rows.append(row_data)
+            
+            # Sort by absolute max correlation if possible
+            df_corr = pd.DataFrame(rows)
+            
+            html = '<table><thead><tr><th>Variabel Trend</th>'
+            for target_col in self.target_cols_clustering:
+                target_name = self.target_names.get(target_col.replace('_mean', ''), target_col)
+                html += f'<th>{target_name}</th>'
+            html += '</tr></thead><tbody>'
+            
+            for _, row in df_corr.iterrows():
+                html += '<tr>'
+                for col in df_corr.columns:
+                    val = row[col]
+                    html += f'<td>{val:.3f}</td>' if isinstance(val, float) else f'<td>{val}</td>'
+                html += '</tr>'
+            html += '</tbody></table>'
+            return html
+        except Exception as e: 
+            logger.error(f"Error generating trend correlation table: {e}")
+            return ""
+
     def generate_hdbscan_metrics_table(self, target=None):
         """Simple metrics table"""
         if target: h = self.results.get('per_target_clustering', {}).get(target, {}).get('hdbscan', {})
@@ -230,8 +292,15 @@ class EnhancedReportGenerator:
         html += '<tr><td>Jumlah Anggota</td>'
         for k in keys: html += f'<td>{stats[k]["n_members"]}</td>'
         html += '</tr>'
+        # Get selected features for this target to highlight
+        selected_features = self.results.get('per_target_clustering', {}).get(target, {}).get('selected_features', [])
+        
         for p in self.predictor_cols_clustering:
-            html += f'<tr><td>{self.predictor_short_names.get(p, p)}</td>'
+            display_name = self.predictor_short_names.get(p, p)
+            if p in selected_features:
+                display_name = f'<span style="color: green;">{display_name}</span>'
+                
+            html += f'<tr><td>{display_name}</td>'
             for k in keys: html += f'<td>{stats[k]["means"].get(p, 0):.2f}</td>'
             html += '</tr>'
         
@@ -267,12 +336,26 @@ class EnhancedReportGenerator:
         for target in self.target_cols:
             lr = self.results.get('linear_regression', {}).get(target, {})
             if not lr: continue
-            sorted_coeffs = sorted(lr.get('coefficients', {}).items(), key=lambda x: abs(x[1]), reverse=True)
             p_vals = lr.get('p_values', {})
+            # Prepare data with significance flag for sorting
+            data_to_sort = []
+            for f, c in lr.get('coefficients', {}).items():
+                p = p_vals.get(f, 1.0)
+                data_to_sort.append({
+                    'f': f,
+                    'c': c,
+                    'p': p,
+                    'sig_val': 1 if p < 0.05 else 0
+                })
+            
+            # Sort: Significance (1 first), then coefficient value (descending)
+            sorted_items = sorted(data_to_sort, key=lambda x: (x['sig_val'], x['c']), reverse=True)
+            
             html = '<table><thead><tr><th>Indikator Sosial</th><th>Koefisien</th><th>P-Value</th><th>Sig*</th></tr></thead><tbody>'
-            for f, c in sorted_coeffs:
-                sig = 'Ya' if p_vals.get(f, 1.0) < 0.05 else 'Tidak'
-                html += f'<tr><td>{self.predictor_short_names.get(f, f)}</td><td>{c:.6f}</td><td>{p_vals.get(f, 1.0):.6f}</td><td>{sig}</td></tr>'
+            for item in sorted_items:
+                f, c, p = item['f'], item['c'], item['p']
+                sig = 'Ya' if p < 0.05 else 'Tidak'
+                html += f'<tr><td>{self.predictor_short_names.get(f, f)}</td><td>{c:.6f}</td><td>{p:.6f}</td><td>{sig}</td></tr>'
             html += f'<tr><td colspan="4"><strong>R² Disesuaikan: {lr.get("adj_r2", 0):.4f} | MAE: {lr.get("mae", 0):.4f}</strong></td></tr></tbody></table>'
             tables[target] = html
         return tables
@@ -326,12 +409,21 @@ class EnhancedReportGenerator:
         for target in self.target_cols:
             df = self.df_timeseries[self.predictor_cols + [target]].dropna()
             if len(df) < 5: continue
-            X = StandardScaler().fit_transform(df[self.predictor_cols])
+            
+            X = df[self.predictor_cols]
             y = df[target].values
+            
+            # Use same scaling as ML pipeline if configured
+            pred_cfg = self.ml_config.get('prediction', {})
+            if pred_cfg.get('use_scaling', False):
+                scaler_type = pred_cfg.get('scaler_type', 'robust')
+                scaler = RobustScaler() if scaler_type == 'robust' else StandardScaler()
+                X = scaler.fit_transform(X)
+            
             lr = LinearRegression().fit(X, y); y_p = lr.predict(X)
             fig, ax = plt.subplots(figsize=(10, 8))
-            ax.scatter(y, y_p, alpha=0.6, s=80, color='black')
-            ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=1)
+            ax.scatter(y, y_p, alpha=0.6, s=80, color='blue')
+            ax.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', lw=1)
             ax.set_title(f'Regresi Linear: {self.target_names[target]}')
             ax.set_xlabel('Aktual'); ax.set_ylabel('Prediksi')
             graphs[target] = self.fig_to_base64(fig)
@@ -376,19 +468,24 @@ class EnhancedReportGenerator:
 <body>
     <h1>Laporan Analisis Machine Learning</h1>
 
-    <div class="note"><strong>Metodologi:</strong> Seluruh analisis dilakukan pada data yang dinormalisasi (StandardScaler). Setiap klastering dilakukan secara independen menggunakan 8 indikator sosial dan 1 indikator pendidikan terkait.</div>
+    <div class="note"><strong>Metodologi:</strong> Seluruh analisis dilakukan pada data yang dinormalisasi (StandardScaler). Setiap klastering dilakukan secara independen menggunakan fitur terpilih (dengan korelasi &gt; ±0.5, ditandai dengan <span style="color: green;">teks hijau</span> pada tabel statistik klaster) dan 1 indikator pendidikan terkait.</div>
 
     <h2>1. Heatmap Korelasi Spearman</h2>
     <div class="section"><div class="graph-container"><img src="data:image/png;base64,{heatmap}"></div></div>
 
-    <h2>2. Korelasi Tahunan</h2>
+    <h2>2. Korelasi Tahunan (Tingkat Level)</h2>
     <div class="section">
         <div class="tables-grid">
         {''.join([f'<div><h3>Target: {self.target_names[t]}</h3>{yearly_corr[t]}</div>' for t in self.target_cols if t in yearly_corr])}
         </div>
     </div>
 
-    <h2>3. Klastering Independen per Target Pendidikan</h2>
+    <h2>3. Korelasi Fitur Trend (Laju Perubahan)</h2>
+    <div class="section">
+        {self.generate_trend_correlation_table()}
+    </div>
+
+    <h2>4. Klastering Independen per Target Pendidikan</h2>
     <div class="section">
         {''.join([f'''
         <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 15px;">
@@ -407,7 +504,7 @@ class EnhancedReportGenerator:
         ''' for t in self.target_cols])}
     </div>
 
-    <h2>4. Analisis Prediksi dan Regresi</h2>
+    <h2>5. Analisis Prediksi dan Regresi</h2>
     <div class="section">
         {''.join([f'''
         <div style="margin-top: 25px;">

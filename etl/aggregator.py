@@ -563,7 +563,7 @@ def validate_aggregations():
             if null_count > 0:
                 logger.warning(f"  ⚠️  Found {null_count} provinces with NULL values in key columns")
             else:
-                logger.info("  ✓ No NULL values in critical predictor/target columns")
+                logger.info("  [OK] No NULL values in critical predictor/target columns")
         
         logger.info("=" * 80)
         logger.info("Validation complete")
