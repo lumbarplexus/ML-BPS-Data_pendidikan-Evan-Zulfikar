@@ -319,6 +319,7 @@ class MLPipeline:
         cl_cfg = self.ml_config.get('clustering', {})
         km_cfg = cl_cfg.get('kmeans', {"max_k": 8, "random_state": 42})
         hdb_cfg = cl_cfg.get('hdbscan', {"min_cluster_size": 2, "min_samples": 1})
+        tw_cfg = cl_cfg.get('target_weighting', {"enabled": True, "weight": 1.5})
         fs_cfg = self.ml_config.get('feature_selection', {})
         corr_threshold = fs_cfg.get('correlation_threshold', 0.4)
         
@@ -350,18 +351,20 @@ class MLPipeline:
             scaler = RobustScaler()
             X_scaled = scaler.fit_transform(X_selected)
             
-            # Target weighting: boost the education indicator's influence on clustering
-            # This helps align clusters more closely with the target outcome
-            target_idx = -1 # Target is always the last column in X (but not in X_selected yet)
-            # Actually X_selected only contains predictors. We need to include target in the scaling
-            X_combined = X[selected_features + [target_mean_col]].copy()
-            X_combined_scaled = scaler.fit_transform(X_combined)
-            
-            # Apply weight to target (the last column)
-            X_combined_scaled[:, -1] = X_combined_scaled[:, -1] * 1.5
-            
-            # Use X_combined_scaled for clustering
-            X_for_clustering = X_combined_scaled
+            # Target weighting logic
+            if tw_cfg.get('enabled', True):
+                # Include target and apply weight
+                X_combined = X[selected_features + [target_mean_col]].copy()
+                X_combined_scaled = scaler.fit_transform(X_combined)
+                
+                weight = tw_cfg.get('weight', 1.5)
+                X_combined_scaled[:, -1] = X_combined_scaled[:, -1] * weight
+                X_for_clustering = X_combined_scaled
+                logger.info(f"  Target weighting ENABLED: {weight}x (Target included in features)")
+            else:
+                # Exclude target from clustering features entirely for a pure baseline
+                X_for_clustering = scaler.fit_transform(X[selected_features])
+                logger.info("  Target weighting DISABLED: Clustering on predictors ONLY")
             
             # K-Means with elbow method
             manual_k = overrides.get('kmeans_k')
