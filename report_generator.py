@@ -287,7 +287,7 @@ class EnhancedReportGenerator:
         if 'noise' in stats: keys.append('noise')
             
         html = '<table><thead><tr><th>Indikator</th>'
-        for k in keys: html += f'<th>{k.replace("cluster_", "Klaster ").replace("noise", "Noise")}</th>'
+        for k in keys: html += f'<th>{k.replace("cluster_", "Kluster ").replace("noise", "Noise")}</th>'
         html += '</tr></thead><tbody>'
         html += '<tr><td>Jumlah Anggota</td>'
         for k in keys: html += f'<td>{stats[k]["n_members"]}</td>'
@@ -387,7 +387,7 @@ class EnhancedReportGenerator:
             for i, l in enumerate(unique):
                 mask = labels == l
                 ax.scatter(X_pca[mask, 0], X_pca[mask, 1], c=[colors[i]] if l != -1 else ['gray'], 
-                           label=f'Klaster {l+1}' if l != -1 else 'Noise', s=120, alpha=0.7, edgecolors='black')
+                           label=f'Kluster {l+1}' if l != -1 else 'Noise', s=120, alpha=0.7, edgecolors='black')
             
             if method == 'kmeans':
                 # Centroids calculation in PCA space
@@ -397,7 +397,7 @@ class EnhancedReportGenerator:
                     ax.scatter(centroid_pca[0], centroid_pca[1], c='red', marker='X', s=300, edgecolors='darkred')
                 ax.scatter([], [], c='red', marker='X', s=100, label='Sentroid')
 
-            ax.set_title(f'Visualisasi Klastering {method.upper()}: {self.target_names[target]}')
+            ax.set_title(f'Visualisasi Klustering {method.upper()}: {self.target_names[target]}')
             ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%})')
             ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%})')
             ax.legend(loc='best'); ax.grid(False)
@@ -468,7 +468,7 @@ class EnhancedReportGenerator:
 <body>
     <h1>Laporan Analisis Machine Learning</h1>
 
-    <div class="note"><strong>Metodologi:</strong> Seluruh analisis dilakukan pada data yang dinormalisasi (StandardScaler). Setiap klastering dilakukan secara independen menggunakan fitur terpilih (dengan korelasi &gt; ±0.5, ditandai dengan <span style="color: green;">teks hijau</span> pada tabel statistik klaster) dan 1 indikator pendidikan terkait.</div>
+    <div class="note"><strong>Metodologi:</strong> Seluruh analisis dilakukan pada data yang dinormalisasi (StandardScaler). Setiap klustering dilakukan secara independen menggunakan fitur terpilih (dengan korelasi &gt; ±0.5, ditandai dengan <span style="color: green;">teks hijau</span> pada tabel statistik kluster) dan 1 indikator pendidikan terkait.</div>
 
     <h2>1. Heatmap Korelasi Spearman</h2>
     <div class="section"><div class="graph-container"><img src="data:image/png;base64,{heatmap}"></div></div>
@@ -485,7 +485,7 @@ class EnhancedReportGenerator:
         {self.generate_trend_correlation_table()}
     </div>
 
-    <h2>4. Klastering Independen per Target Pendidikan</h2>
+    <h2>4. Klustering Independen per Target Pendidikan</h2>
     <div class="section">
         {''.join([f'''
         <div style="border-top: 1px solid black; margin-top: 30px; padding-top: 15px;">
