@@ -165,6 +165,21 @@
         
     </div>
 
-    <div class="timestamp">Laporan Dibuat: 2026-04-30 12:15:35</div>
+    <h2>6. Ringkasan Performa Model</h2>
+    <div class="section">
+        <h3>Ringkasan Klustering K-Means</h3>
+        <table><thead><tr><th>Indikator</th><th>Jumlah K</th><th>Inertia</th><th>Silhouette</th></tr></thead><tbody><tr><td>APMSD</td><td>3</td><td>41.00</td><td>0.3976</td></tr><tr><td>APMSMP</td><td>3</td><td>13.01</td><td>0.4658</td></tr><tr><td>APMSM</td><td>5</td><td>30.71</td><td>0.3972</td></tr><tr><td>APKPT</td><td>3</td><td>46.05</td><td>0.4525</td></tr><tr><td>RLS</td><td>3</td><td>75.94</td><td>0.3383</td></tr></tbody></table>
+        
+        <h3>Ringkasan Klustering HDBSCAN</h3>
+        <table><thead><tr><th>Indikator</th><th>Jumlah Kluster</th><th>Noise</th><th>Silhouette</th></tr></thead><tbody><tr><td>APMSD</td><td>5</td><td>0.3529</td><td>0.4338</td></tr><tr><td>APMSMP</td><td>10</td><td>0.2647</td><td>0.5322</td></tr><tr><td>APMSM</td><td>9</td><td>0.3235</td><td>0.4290</td></tr><tr><td>APKPT</td><td>9</td><td>0.2647</td><td>0.3870</td></tr><tr><td>RLS</td><td>8</td><td>0.3824</td><td>0.3175</td></tr></tbody></table>
+        
+        <h3>Ringkasan Random Forest</h3>
+        <table><thead><tr><th>Indikator</th><th>R² Disesuaikan</th><th>MAE</th><th>3 Fitur Paling Penting</th></tr></thead><tbody><tr><td>APMSD</td><td>0.2607</td><td>0.9358</td><td>PAIN (%), PTKF (%), PMTS (%)</td></tr><tr><td>APMSMP</td><td>0.3369</td><td>2.8672</td><td>AHH, PPM (%), PTKF (%)</td></tr><tr><td>APMSM</td><td>0.3031</td><td>3.2704</td><td>PMTS (%), PAIN (%), PPM (%)</td></tr><tr><td>APKPT</td><td>0.0239</td><td>5.2492</td><td>PTKF (%), PPM (%), AHH</td></tr><tr><td>RLS</td><td>0.6269</td><td>0.3391</td><td>PTKF (%), URPJ, PAIN (%)</td></tr></tbody></table>
+        
+        <h3>Ringkasan Regresi Linear</h3>
+        <table><thead><tr><th>Indikator</th><th>R² Disesuaikan</th><th>MAE</th><th>3 Fitur Signifikan</th></tr></thead><tbody><tr><td>APMSD</td><td>0.0442</td><td>1.1387</td><td>PTKF (%) (+), PTKIN (%) (+), PMTS (%) (+)</td></tr><tr><td>APMSMP</td><td>0.2084</td><td>3.4490</td><td>PTKF (%) (+), AHH (+), PTKIN (%) (+)</td></tr><tr><td>APMSM</td><td>-0.1092</td><td>4.6044</td><td>PTKF (%) (+), URPJ (-), AHH (-)</td></tr><tr><td>APKPT</td><td>-0.3172</td><td>7.1233</td><td>PTKIN (%) (+), PPM (%) (+)</td></tr><tr><td>RLS</td><td>0.3862</td><td>0.4652</td><td>PTKF (%) (+), PMTS (%) (+), PTKIN (%) (+)</td></tr></tbody></table>
+    </div>
+
+    <div class="timestamp">Laporan Dibuat: 2026-05-04 11:05:15</div>
 </body>
 </html>

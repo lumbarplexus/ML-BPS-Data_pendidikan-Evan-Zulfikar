@@ -429,6 +429,105 @@ class EnhancedReportGenerator:
             graphs[target] = self.fig_to_base64(fig)
         return graphs
 
+    def generate_kmeans_summary_table(self):
+        """K-Means summary table (Indikator, jumlah K, inertia, silhouette)"""
+        html = '<table><thead><tr><th>Indikator</th><th>Jumlah K</th><th>Inertia</th><th>Silhouette</th></tr></thead><tbody>'
+        for t in self.target_cols:
+            k = self.results.get('per_target_clustering', {}).get(t, {}).get('kmeans', {})
+            if not k: continue
+            
+            opt_k = k.get("optimal_k", k.get("n_clusters", "N/A"))
+            inertia = k.get("inertia")
+            if inertia is None and "inertias" in k and "k_range" in k:
+                try:
+                    idx = k["k_range"].index(opt_k)
+                    inertia = k["inertias"][idx]
+                except: inertia = "N/A"
+            
+            sil = k.get("final_silhouette", k.get("silhouette", 0))
+            
+            html += f'<tr><td>{self.target_names.get(t, t)}</td>'
+            html += f'<td>{opt_k}</td>'
+            html += f'<td>{f"{inertia:.2f}" if isinstance(inertia, (int, float)) else inertia}</td>'
+            html += f'<td>{sil:.4f}</td></tr>'
+        html += '</tbody></table>'
+        return html
+
+    def generate_hdbscan_summary_table(self):
+        """HDBSCAN summary table (indikator, jumlah kluster, noise, silhouette)"""
+        html = '<table><thead><tr><th>Indikator</th><th>Jumlah Kluster</th><th>Noise</th><th>Silhouette</th></tr></thead><tbody>'
+        for t in self.target_cols:
+            h = self.results.get('per_target_clustering', {}).get(t, {}).get('hdbscan', {})
+            if not h: continue
+            
+            n_clusters = h.get("n_clusters", "N/A")
+            noise = h.get("noise_ratio", 0)
+            sil = h.get("silhouette", h.get("silhouette_score", 0))
+            
+            html += f'<tr><td>{self.target_names.get(t, t)}</td>'
+            html += f'<td>{n_clusters}</td>'
+            html += f'<td>{noise:.4f}</td>'
+            html += f'<td>{sil:.4f}</td></tr>'
+        html += '</tbody></table>'
+        return html
+
+    def generate_rf_summary_table(self):
+        """Random Forest summary table (indikator, R^2 disesuaikan, MAE, 3 fitur penting)"""
+        html = '<table><thead><tr><th>Indikator</th><th>R² Disesuaikan</th><th>MAE</th><th>3 Fitur Paling Penting</th></tr></thead><tbody>'
+        for t in self.target_cols:
+            rf = self.results.get('random_forest', {}).get(t, {})
+            if not rf: continue
+            
+            adj_r2 = rf.get("adj_r2", 0)
+            mae = rf.get("mae", 0)
+            fi = sorted(rf.get('feature_importance', {}).items(), key=lambda x: x[1], reverse=True)
+            top_3 = [self.predictor_short_names.get(f, f) for f, v in fi[:3]]
+            top_3_str = ", ".join(top_3)
+            
+            html += f'<tr><td>{self.target_names.get(t, t)}</td>'
+            html += f'<td>{adj_r2:.4f}</td>'
+            html += f'<td>{mae:.4f}</td>'
+            html += f'<td>{top_3_str}</td></tr>'
+        html += '</tbody></table>'
+        return html
+
+    def generate_lr_summary_table(self):
+        """Linear Regression summary table (indikator, R^2 disesuaikan, MAE, 3 fitur signifikan)"""
+        html = '<table><thead><tr><th>Indikator</th><th>R² Disesuaikan</th><th>MAE</th><th>3 Fitur Signifikan</th></tr></thead><tbody>'
+        for t in self.target_cols:
+            lr = self.results.get('linear_regression', {}).get(t, {})
+            if not lr: continue
+            
+            adj_r2 = lr.get("adj_r2", 0)
+            mae = lr.get("mae", 0)
+            p_vals = lr.get('p_values', {})
+            coeffs = lr.get('coefficients', {})
+            
+            # Filter significant features (p < 0.05)
+            sig_features = []
+            for f, p in p_vals.items():
+                if p < 0.05:
+                    sig_features.append(f)
+            
+            # Sort by absolute coefficient value
+            sig_features_sorted = sorted(sig_features, key=lambda f: abs(coeffs.get(f, 0)), reverse=True)
+            
+            top_3 = []
+            for f in sig_features_sorted[:3]:
+                c = coeffs.get(f, 0)
+                sign = "(+)" if c > 0 else "(-)"
+                name = self.predictor_short_names.get(f, f)
+                top_3.append(f"{name} {sign}")
+            
+            top_3_str = ", ".join(top_3) if top_3 else "-"
+            
+            html += f'<tr><td>{self.target_names.get(t, t)}</td>'
+            html += f'<td>{adj_r2:.4f}</td>'
+            html += f'<td>{mae:.4f}</td>'
+            html += f'<td>{top_3_str}</td></tr>'
+        html += '</tbody></table>'
+        return html
+
     def generate_html(self, output_file='reports/ml_analysis_report_enhanced.html'):
         """Generate final HTML with booktabs style"""
         logger.info("Building HTML report with booktabs style...")
@@ -516,6 +615,21 @@ class EnhancedReportGenerator:
             <div class="graph-container"><h4>Plot Prediksi Regresi Linear</h4><img src="data:image/png;base64,{lr_graphs.get(t, '')}"></div>
         </div>
         ''' for t in self.target_cols])}
+    </div>
+
+    <h2>6. Ringkasan Performa Model</h2>
+    <div class="section">
+        <h3>Ringkasan Klustering K-Means</h3>
+        {self.generate_kmeans_summary_table()}
+        
+        <h3>Ringkasan Klustering HDBSCAN</h3>
+        {self.generate_hdbscan_summary_table()}
+        
+        <h3>Ringkasan Random Forest</h3>
+        {self.generate_rf_summary_table()}
+        
+        <h3>Ringkasan Regresi Linear</h3>
+        {self.generate_lr_summary_table()}
     </div>
 
     <div class="timestamp">Laporan Dibuat: {timestamp}</div>
