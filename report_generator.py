@@ -13,7 +13,13 @@ import json
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from sqlalchemy import create_engine
+from html import escape
+import logging
+
+try:
+    from sqlalchemy import create_engine
+except Exception:
+    create_engine = None
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -31,10 +37,18 @@ from sklearn.metrics import mean_absolute_error, r2_score
 from scipy.stats import spearmanr
 import base64
 from io import BytesIO
-from config.db_config import PSQL_CONNECTION_STRING
-from utils.logger import get_logger
 
-logger = get_logger(__name__)
+try:
+    from config.db_config import PSQL_CONNECTION_STRING
+except Exception:
+    PSQL_CONNECTION_STRING = None
+
+try:
+    from utils.logger import get_logger
+    logger = get_logger(__name__)
+except Exception:
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
 
 class EnhancedReportGenerator:
     """Generate comprehensive enhanced HTML report with all visualizations"""
@@ -57,8 +71,9 @@ class EnhancedReportGenerator:
         except:
             self.ml_config = {}
         
-        # Connect to database
-        self.engine = create_engine(PSQL_CONNECTION_STRING)
+        # Connect to database when available. The cluster section can still be
+        # generated from ml_results.json without a database connection.
+        self.engine = create_engine(PSQL_CONNECTION_STRING) if create_engine and PSQL_CONNECTION_STRING else None
         self.df_timeseries = None
         self.df_clustering = None
         self.load_data()
@@ -126,6 +141,11 @@ class EnhancedReportGenerator:
     
     def load_data(self):
         """Load both timeseries and clustering data"""
+        if self.engine is None:
+            logger.warning("Database connection unavailable; trying to build clustering data from local CSV files")
+            self.df_clustering = self.load_clustering_data_from_csv()
+            return
+
         try:
             # Time series data for correlations and prediction
             query_ts = "SELECT * FROM dm.timeseries_province_year_ml WHERE provinsi != 'INDONESIA' ORDER BY provinsi, tahun"
@@ -138,6 +158,112 @@ class EnhancedReportGenerator:
             logger.info(f"Loaded data: TS={self.df_timeseries.shape}, CL={self.df_clustering.shape}")
         except Exception as e:
             logger.error(f"Failed to load data: {e}")
+            logger.warning("Trying to build clustering data from local CSV files")
+            self.df_clustering = self.load_clustering_data_from_csv()
+
+    def _canonical_provinces(self):
+        return [
+            "ACEH", "SUMATERA UTARA", "SUMATERA BARAT", "RIAU", "JAMBI",
+            "SUMATERA SELATAN", "BENGKULU", "LAMPUNG", "KEP. BANGKA BELITUNG",
+            "KEP. RIAU", "DKI JAKARTA", "JAWA BARAT", "JAWA TENGAH",
+            "DI YOGYAKARTA", "JAWA TIMUR", "BANTEN", "BALI",
+            "NUSA TENGGARA BARAT", "NUSA TENGGARA TIMUR", "KALIMANTAN BARAT",
+            "KALIMANTAN TENGAH", "KALIMANTAN SELATAN", "KALIMANTAN TIMUR",
+            "KALIMANTAN UTARA", "SULAWESI UTARA", "SULAWESI TENGAH",
+            "SULAWESI SELATAN", "SULAWESI TENGGARA", "GORONTALO",
+            "SULAWESI BARAT", "MALUKU", "MALUKU UTARA", "PAPUA BARAT",
+            "PAPUA",
+        ]
+
+    def _read_province_year_values(self, filepath, years, data_start_idx, col_start=1):
+        raw_df = pd.read_csv(filepath, header=None)
+        provinces = raw_df.iloc[data_start_idx:, 0].astype(str).str.strip()
+        values = raw_df.iloc[data_start_idx:, col_start:col_start + len(years)].copy()
+        values.columns = years
+        values['provinsi'] = provinces.values
+        values = values[values['provinsi'].isin(self._canonical_provinces())]
+        long_df = values.melt(id_vars='provinsi', var_name='tahun', value_name='nilai')
+        long_df['nilai'] = pd.to_numeric(long_df['nilai'], errors='coerce')
+        return long_df.dropna(subset=['nilai'])
+
+    def _read_simple_csv(self, filename):
+        filepath = f'data/{filename}'
+        raw_df = pd.read_csv(filepath, header=None)
+        year_row_idx, data_start_idx = None, None
+        for idx in [1, 2]:
+            candidates = raw_df.iloc[idx, 1:].fillna('').astype(str)
+            if candidates.str.isnumeric().sum() >= 4:
+                year_row_idx = idx
+                data_start_idx = idx + 1
+                break
+        if year_row_idx is None:
+            raise ValueError(f'Cannot detect year row in {filename}')
+
+        years = [int(y) for y in raw_df.iloc[year_row_idx, 1:6].tolist()]
+        return self._read_province_year_values(filepath, years, data_start_idx)
+
+    def _read_poverty_csv(self):
+        filepath = 'data/Ekonomi_persentase_penduduk_miskin.csv'
+        raw_df = pd.read_csv(filepath, header=None)
+        years = [int(y) for y in raw_df.iloc[2, 1:6].tolist()]
+        return self._read_province_year_values(filepath, years, data_start_idx=4)
+
+    def _read_apm_csv(self, col_start):
+        filepath = 'data/Pendidikan_APM_provinsi.csv'
+        raw_df = pd.read_csv(filepath, header=None)
+        years = [int(y) for y in raw_df.iloc[2, col_start:col_start + 5].tolist()]
+        return self._read_province_year_values(filepath, years, data_start_idx=3, col_start=col_start)
+
+    def _read_ahh_csv(self, col_start):
+        filepath = 'data/Kesehatan_angka_harapan_hidup.csv'
+        raw_df = pd.read_csv(filepath, header=None)
+        years = [int(y) for y in raw_df.iloc[2, col_start:col_start + 5].tolist()]
+        return self._read_province_year_values(filepath, years, data_start_idx=3, col_start=col_start)
+
+    def _mean_and_trend(self, df, years):
+        scoped = df[df['tahun'].isin(years)]
+        mean_series = scoped.groupby('provinsi')['nilai'].mean()
+        first_year, last_year = years[0], years[-1]
+        first = scoped[scoped['tahun'] == first_year].set_index('provinsi')['nilai']
+        last = scoped[scoped['tahun'] == last_year].set_index('provinsi')['nilai']
+        trend = ((last - first) / first * 100).replace([np.inf, -np.inf], np.nan)
+        return mean_series, trend
+
+    def _assign_mean_trend(self, out, prefix, df, years):
+        mean_series, trend = self._mean_and_trend(df, years)
+        out[f'{prefix}_mean'] = out['provinsi'].map(mean_series)
+        out[f'{prefix}_trend_pct'] = out['provinsi'].map(trend)
+
+    def _assign_mean(self, out, col, df, years):
+        scoped = df[df['tahun'].isin(years)]
+        mean_series = scoped.groupby('provinsi')['nilai'].mean()
+        out[col] = out['provinsi'].map(mean_series)
+
+    def load_clustering_data_from_csv(self):
+        """Build dm.agg_province_ml equivalent from local CSV files."""
+        try:
+            out = pd.DataFrame({'provinsi': sorted(self._canonical_provinces())})
+
+            self._assign_mean_trend(out, 'ekonomi_miskin', self._read_poverty_csv(), [2021, 2022, 2023, 2024, 2025])
+            self._assign_mean_trend(out, 'ekonomi_upah', self._read_simple_csv('Ekonomi_upah_rata-rata.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'kesehatan_ahh_perempuan', self._read_ahh_csv(6), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'kesehatan_unmet', self._read_simple_csv('Kesehatan_unmet_layanan_kesehatan.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'ketenagakerjaan_formal', self._read_simple_csv('Ketenagakerjaan_formal.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'ketenagakerjaan_informal', self._read_simple_csv('Ketenagakerjaan_informal.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'teknologi_telepon', self._read_simple_csv('Teknologi_memiliki_telepon_seluler.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean_trend(out, 'teknologi_internet', self._read_simple_csv('Teknologi_mengakses_internet.csv'), [2020, 2021, 2022, 2023, 2024])
+
+            self._assign_mean(out, 'apm_sd_mean', self._read_apm_csv(1), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean(out, 'apm_smp_mean', self._read_apm_csv(6), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean(out, 'apm_sm_mean', self._read_apm_csv(11), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean(out, 'apk_pt_mean', self._read_simple_csv('Pendidikan_APK_PT_provinsi.csv'), [2020, 2021, 2022, 2023, 2024])
+            self._assign_mean(out, 'rata_rata_lama_sekolah_mean', self._read_simple_csv('Pendidikan_Rata-rata_lama_sekolah.csv'), [2020, 2021, 2022, 2023, 2024])
+
+            logger.info(f"Built clustering data from CSV: {out.shape}")
+            return out
+        except Exception as e:
+            logger.error(f"Failed to build clustering data from CSV: {e}")
+            return None
 
     def fig_to_base64(self, fig):
         """Convert matplotlib figure to base64-encoded PNG"""
@@ -287,7 +413,9 @@ class EnhancedReportGenerator:
         if 'noise' in stats: keys.append('noise')
             
         html = '<table><thead><tr><th>Indikator</th>'
-        for k in keys: html += f'<th>{k.replace("cluster_", "Kluster ").replace("noise", "Noise")}</th>'
+        for k in keys:
+            header = 'Noise' if k == 'noise' else self._cluster_display_name(int(k.split('_')[1]))
+            html += f'<th>{header}</th>'
         html += '</tr></thead><tbody>'
         html += '<tr><td>Jumlah Anggota</td>'
         for k in keys: html += f'<td>{stats[k]["n_members"]}</td>'
@@ -315,6 +443,62 @@ class EnhancedReportGenerator:
             for k in keys: html += f'<td>{stats[k]["means"].get(t_col, 0):.2f}</td>'
             html += '</tr>'
             
+        html += '</tbody></table>'
+        return html
+
+    def _cluster_display_name(self, label):
+        if label == -1:
+            return 'Noise'
+        return f'Kluster {label + 1}'
+
+    def _get_cluster_order_from_labels(self, labels):
+        unique_labels = sorted(set(int(l) for l in labels if int(l) != -1))
+        if -1 in set(int(l) for l in labels):
+            unique_labels.append(-1)
+        return unique_labels
+
+    def generate_cluster_overview_table(self, method='kmeans', target=None):
+        """Compact member and target-statistics table for each cluster."""
+        target_results = self.results.get('per_target_clustering', {}).get(target, {})
+        method_results = target_results.get(method, {})
+        labels = [int(l) for l in method_results.get('labels', [])]
+        provinces = target_results.get('provinces', [])
+        stats = method_results.get('stats', {})
+
+        if not labels or not provinces or len(labels) != len(provinces):
+            return '<p>Data anggota kluster tidak tersedia.</p>'
+
+        total = len(labels)
+        target_col = f'{target}_mean'
+        rows = []
+        for label in self._get_cluster_order_from_labels(labels):
+            key = 'noise' if label == -1 else f'cluster_{label}'
+            members = sorted([provinces[i] for i, l in enumerate(labels) if l == label])
+            n_members = len(members)
+            target_mean = stats.get(key, {}).get('means', {}).get(target_col)
+            rows.append({
+                'label': label,
+                'name': self._cluster_display_name(label),
+                'n_members': n_members,
+                'pct': n_members / total * 100 if total else 0,
+                'target_mean': target_mean,
+                'members': members
+            })
+
+        html = '<table class="cluster-overview-table"><thead><tr>'
+        html += '<th>Kluster</th><th>Jumlah</th><th>% Sampel</th>'
+        html += f'<th>Rata-rata {self.target_names.get(target, target)}</th><th>Provinsi</th>'
+        html += '</tr></thead><tbody>'
+        for row in rows:
+            members = ', '.join(escape(str(m)) for m in row['members'])
+            target_mean = f'{row["target_mean"]:.2f}' if isinstance(row['target_mean'], (int, float)) else 'N/A'
+            html += '<tr>'
+            html += f'<td>{row["name"]}</td>'
+            html += f'<td>{row["n_members"]}</td>'
+            html += f'<td>{row["pct"]:.1f}%</td>'
+            html += f'<td>{target_mean}</td>'
+            html += f'<td class="members-cell">{members}</td>'
+            html += '</tr>'
         html += '</tbody></table>'
         return html
 
@@ -360,52 +544,210 @@ class EnhancedReportGenerator:
             tables[target] = html
         return tables
 
-    def generate_clustering_visualizations(self, method='kmeans'):
-        """Generate individual clustering graphs for each target"""
+    def generate_cluster_membership_visualizations(self, method='kmeans'):
+        """Generate cluster-member plots using only ml_results.json labels."""
         graphs = {}
         results = self.results.get('per_target_clustering', {})
-        if self.df_clustering is None: return {}
+        colors = ['#2f6fb0', '#d95f02', '#1b9e77', '#7570b3', '#e7298a',
+                  '#66a61e', '#e6ab02', '#a6761d', '#1f9fd0', '#666666']
+
+        for target in self.target_cols:
+            target_results = results.get(target, {})
+            method_results = target_results.get(method, {})
+            labels = [int(l) for l in method_results.get('labels', [])]
+            provinces = target_results.get('provinces', [])
+            if not labels or not provinces or len(labels) != len(provinces):
+                continue
+
+            cluster_labels = self._get_cluster_order_from_labels(labels)
+            n_clusters = max(1, len(cluster_labels))
+            cluster_positions = {label: idx for idx, label in enumerate(cluster_labels)}
+            buckets = {label: [] for label in cluster_labels}
+            for idx, label in enumerate(labels):
+                buckets[label].append(idx)
+
+            points_html = []
+            for label in cluster_labels:
+                members = buckets[label]
+                col = cluster_positions[label]
+                x_base = 8 + ((col + 0.5) / n_clusters * 84)
+                for member_pos, idx in enumerate(members):
+                    rows = max(1, len(members))
+                    y_pct = 10 + ((member_pos + 0.5) / rows * 78)
+                    jitter = ((member_pos % 3) - 1) * 1.4
+                    x_pct = min(96, max(4, x_base + jitter))
+                    color = '#777777' if label == -1 else colors[label % len(colors)]
+                    cluster_name = self._cluster_display_name(label)
+                    tooltip = f'{provinces[idx]} | {cluster_name}'
+                    points_html.append(
+                        '<span class="cluster-point" '
+                        f'style="left:{x_pct:.2f}%; top:{y_pct:.2f}%; background:{color};" '
+                        f'data-tooltip="{escape(tooltip, quote=True)}" '
+                        f'aria-label="{escape(tooltip, quote=True)}"></span>'
+                    )
+
+            legend_items = []
+            for label in cluster_labels:
+                color = '#777777' if label == -1 else colors[label % len(colors)]
+                count = len(buckets[label])
+                legend_items.append(
+                    '<span class="legend-item">'
+                    f'<span class="legend-swatch" style="background:{color};"></span>'
+                    f'{self._cluster_display_name(label)} ({count})</span>'
+                )
+
+            cluster_guides = []
+            for label in cluster_labels:
+                col = cluster_positions[label]
+                left = 8 + (col / n_clusters * 84)
+                width = 84 / n_clusters
+                cluster_guides.append(
+                    f'<span class="cluster-column-label" style="left:{left:.2f}%; width:{width:.2f}%;">'
+                    f'{self._cluster_display_name(label)}</span>'
+                )
+
+            graphs[target] = f'''
+            <div class="cluster-viz" role="img" aria-label="Visualisasi anggota {method.upper()} {self.target_names[target]}">
+                <div class="cluster-viz-head">
+                    <span>Layout fallback dari ml_results.json</span>
+                    <span>Hover titik untuk nama provinsi</span>
+                </div>
+                <div class="cluster-plot cluster-membership-plot">
+                    {''.join(cluster_guides)}
+                    {''.join(points_html)}
+                </div>
+                <div class="cluster-legend">{''.join(legend_items)}</div>
+                <div class="cluster-features">Visualisasi ini memakai label kluster tersimpan; koneksi database diperlukan hanya untuk plot PCA berbasis fitur.</div>
+            </div>
+            '''
+        return graphs
+
+    def generate_clustering_visualizations(self, method='kmeans'):
+        """Generate interactive clustering graphs for each target."""
+        graphs = {}
+        results = self.results.get('per_target_clustering', {})
+        if self.df_clustering is None:
+            return {}
         
         for target in self.target_cols:
-            t_data = results.get(target, {}).get(method, {})
+            target_results = results.get(target, {})
+            t_data = target_results.get(method, {})
             if not t_data: continue
             
             t_col = f"{target}_mean"
-            df = self.df_clustering[self.predictor_cols_clustering + [t_col]].dropna()
-            labels = np.array(t_data.get('labels', []))
+            selected_features = target_results.get('selected_features') or self.predictor_cols_clustering
+            plot_cols = [c for c in selected_features if c in self.df_clustering.columns]
+            if not plot_cols:
+                plot_cols = self.predictor_cols_clustering
+            if len(plot_cols) < 2:
+                fallback_cols = [c for c in self.predictor_cols_clustering if c not in plot_cols and c in self.df_clustering.columns]
+                plot_cols = (plot_cols + fallback_cols)[:2]
+
+            df_cols = list(dict.fromkeys(['provinsi'] + self.predictor_cols_clustering + [t_col]))
+            df = self.df_clustering[df_cols].dropna()
+            labels = np.array(t_data.get('labels', []), dtype=int)
             
             if len(df) != len(labels):
                 logger.warning(f"Length mismatch for {target} ({method}): df={len(df)}, labels={len(labels)}")
                 continue
-                
-            X = StandardScaler().fit_transform(df[self.predictor_cols_clustering])
-            pca = PCA(n_components=2); X_pca = pca.fit_transform(X)
-            
-            fig, ax = plt.subplots(figsize=(10, 8))
-            unique = sorted(set(labels))
-            colors = plt.cm.Set3(np.linspace(0, 1, len(unique)))
-            for i, l in enumerate(unique):
-                mask = labels == l
-                ax.scatter(X_pca[mask, 0], X_pca[mask, 1], c=[colors[i]] if l != -1 else ['gray'], 
-                           label=f'Kluster {l+1}' if l != -1 else 'Noise', s=120, alpha=0.7, edgecolors='black')
-            
-            if method == 'kmeans':
-                # Centroids calculation in PCA space
-                for l in unique:
-                    if l == -1: continue
-                    centroid_pca = X_pca[labels == l].mean(axis=0)
-                    ax.scatter(centroid_pca[0], centroid_pca[1], c='red', marker='X', s=300, edgecolors='darkred')
-                ax.scatter([], [], c='red', marker='X', s=100, label='Sentroid')
 
-            ax.set_title(f'Visualisasi Klustering {method.upper()}: {self.target_names[target]}')
-            ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%})')
-            ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%})')
-            ax.legend(loc='best'); ax.grid(False)
-            graphs[target] = self.fig_to_base64(fig)
+            X = RobustScaler().fit_transform(df[plot_cols])
+            pca = PCA(n_components=2)
+            X_pca = pca.fit_transform(X)
+            loadings = pd.DataFrame(
+                pca.components_.T,
+                columns=['PC1', 'PC2'],
+                index=[self.predictor_short_names.get(c, c) for c in plot_cols]
+            )
+            pc1_top = loadings['PC1'].abs().sort_values(ascending=False).head(3).index.tolist()
+            pc2_top = loadings['PC2'].abs().sort_values(ascending=False).head(3).index.tolist()
+
+            x_min, x_max = X_pca[:, 0].min(), X_pca[:, 0].max()
+            y_min, y_max = X_pca[:, 1].min(), X_pca[:, 1].max()
+            x_span = x_max - x_min if x_max != x_min else 1
+            y_span = y_max - y_min if y_max != y_min else 1
+            colors = ['#2f6fb0', '#d95f02', '#1b9e77', '#7570b3', '#e7298a',
+                      '#66a61e', '#e6ab02', '#a6761d', '#1f9fd0', '#666666']
+
+            points_html = []
+            centroid_html = []
+            cluster_labels = self._get_cluster_order_from_labels(labels)
+
+            for idx, row in df.reset_index(drop=True).iterrows():
+                label = int(labels[idx])
+                x_pct = 7 + ((X_pca[idx, 0] - x_min) / x_span * 86)
+                y_pct = 93 - ((X_pca[idx, 1] - y_min) / y_span * 86)
+                jitter = ((idx % 5) - 2) * 0.35
+                x_pct = min(96, max(4, x_pct + jitter))
+                y_pct = min(96, max(4, y_pct - jitter))
+                color = '#777777' if label == -1 else colors[label % len(colors)]
+                cluster_name = self._cluster_display_name(label)
+                tooltip = (
+                    f"{row['provinsi']} | {cluster_name} | "
+                    f"{self.target_names.get(target, target)}: {row[t_col]:.2f} | "
+                    f"PC1: {X_pca[idx, 0]:.2f}, PC2: {X_pca[idx, 1]:.2f}"
+                )
+                points_html.append(
+                    '<span class="cluster-point" '
+                    f'style="left:{x_pct:.2f}%; top:{y_pct:.2f}%; background:{color};" '
+                    f'data-tooltip="{escape(tooltip, quote=True)}" '
+                    f'aria-label="{escape(tooltip, quote=True)}"></span>'
+                )
+
+            if method == 'kmeans':
+                for label in cluster_labels:
+                    if label == -1:
+                        continue
+                    mask = labels == label
+                    centroid = X_pca[mask].mean(axis=0)
+                    x_pct = 7 + ((centroid[0] - x_min) / x_span * 86)
+                    y_pct = 93 - ((centroid[1] - y_min) / y_span * 86)
+                    centroid_html.append(
+                        '<span class="cluster-centroid" '
+                        f'style="left:{x_pct:.2f}%; top:{y_pct:.2f}%;" '
+                        f'data-tooltip="Sentroid {self._cluster_display_name(label)}"></span>'
+                    )
+
+            legend_items = []
+            for label in cluster_labels:
+                color = '#777777' if label == -1 else colors[label % len(colors)]
+                count = int((labels == label).sum())
+                legend_items.append(
+                    '<span class="legend-item">'
+                    f'<span class="legend-swatch" style="background:{color};"></span>'
+                    f'{self._cluster_display_name(label)} ({count})</span>'
+                )
+            if method == 'kmeans':
+                legend_items.append('<span class="legend-item"><span class="centroid-legend">X</span>Sentroid</span>')
+
+            feature_names = ', '.join(self.predictor_short_names.get(c, c) for c in plot_cols)
+            graphs[target] = f'''
+            <div class="cluster-viz" role="img" aria-label="Visualisasi {method.upper()} {self.target_names[target]}">
+                <div class="cluster-viz-head">
+                    <span>PC1 {pca.explained_variance_ratio_[0]:.1%}</span>
+                    <span>PC2 {pca.explained_variance_ratio_[1]:.1%}</span>
+                </div>
+                <div class="cluster-plot">
+                    <span class="axis-label axis-x">PC1</span>
+                    <span class="axis-label axis-y">PC2</span>
+                    {''.join(points_html)}
+                    {''.join(centroid_html)}
+                </div>
+                <div class="cluster-legend">{''.join(legend_items)}</div>
+                <div class="cluster-features">
+                    Sumbu X = PC1 ({pca.explained_variance_ratio_[0]:.1%} variasi), terutama dipengaruhi: {escape(', '.join(pc1_top))}.<br>
+                    Sumbu Y = PC2 ({pca.explained_variance_ratio_[1]:.1%} variasi), terutama dipengaruhi: {escape(', '.join(pc2_top))}.<br>
+                    Fitur PCA: {escape(feature_names)}
+                </div>
+            </div>
+            '''
         return graphs
 
     def generate_linear_regression_graphs(self):
         graphs = {}
+        if self.df_timeseries is None:
+            return graphs
+
         for target in self.target_cols:
             df = self.df_timeseries[self.predictor_cols + [target]].dropna()
             if len(df) < 5: continue
@@ -541,6 +883,10 @@ class EnhancedReportGenerator:
         rf_tables = self.generate_rf_feature_importance_tables()
         
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        heatmap_html = (
+            f'<img src="data:image/png;base64,{heatmap}">'
+            if heatmap else '<p>Data heatmap tidak tersedia tanpa koneksi database.</p>'
+        )
         
         html = f"""<!DOCTYPE html>
 <html lang="id">
@@ -560,17 +906,41 @@ class EnhancedReportGenerator:
         .graph-container {{ text-align: center; margin: 15px 0; }}
         .graph-container img {{ max-width: 85%; height: auto; }}
         .tables-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }}
+        .cluster-viz {{ margin: 10px 0 18px; text-align: left; }}
+        .cluster-viz-head {{ display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }}
+        .cluster-plot {{ position: relative; width: 100%; aspect-ratio: 4 / 3; border: 1px solid #444; background: linear-gradient(#f3f3f3 1px, transparent 1px), linear-gradient(90deg, #f3f3f3 1px, transparent 1px); background-size: 20% 20%; overflow: visible; }}
+        .cluster-membership-plot {{ background: linear-gradient(90deg, #f7f7f7 1px, transparent 1px); background-size: 20% 100%; }}
+        .cluster-point {{ position: absolute; width: 12px; height: 12px; border: 1px solid #111; border-radius: 50%; transform: translate(-50%, -50%); cursor: pointer; z-index: 2; }}
+        .cluster-point:hover {{ width: 18px; height: 18px; z-index: 20; }}
+        .cluster-point:hover::after, .cluster-centroid:hover::after {{ content: attr(data-tooltip); position: absolute; left: 14px; top: -8px; min-width: 190px; max-width: 260px; padding: 7px 9px; background: #111; color: #fff; font-family: Arial, sans-serif; font-size: 12px; line-height: 1.3; border-radius: 3px; white-space: normal; box-shadow: 0 2px 8px rgba(0,0,0,0.25); pointer-events: none; }}
+        .cluster-centroid {{ position: absolute; color: #b00000; font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; line-height: 1; transform: translate(-50%, -50%); cursor: pointer; z-index: 3; }}
+        .cluster-centroid::before {{ content: "X"; }}
+        .cluster-legend {{ display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 8px; font-family: Arial, sans-serif; font-size: 12px; }}
+        .legend-item {{ display: inline-flex; align-items: center; gap: 5px; }}
+        .legend-swatch {{ display: inline-block; width: 10px; height: 10px; border: 1px solid #111; border-radius: 50%; }}
+        .centroid-legend {{ color: #b00000; font-weight: bold; font-family: Arial, sans-serif; }}
+        .cluster-features {{ margin-top: 6px; font-size: 11px; color: #333; text-align: left; }}
+        .axis-label {{ position: absolute; font-size: 11px; color: #333; background: rgba(255,255,255,0.85); padding: 1px 3px; }}
+        .axis-x {{ left: 50%; bottom: 4px; transform: translateX(-50%); }}
+        .axis-y {{ left: 4px; top: 50%; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; }}
+        .cluster-column-label {{ position: absolute; top: 4px; text-align: center; font-family: Arial, sans-serif; font-size: 11px; color: #333; }}
+        .cluster-overview-table .members-cell {{ text-align: left; line-height: 1.35; }}
         .timestamp {{ margin-top: 50px; font-size: 11px; text-align: right; font-style: italic; border-top: 1px solid #ccc; padding-top: 10px; }}
         .note {{ border: 1px solid black; padding: 12px; background: #fff; margin: 15px 0; font-size: 14px; }}
+        @media (max-width: 800px) {{
+            body {{ margin: 20px 12px; }}
+            .tables-grid {{ grid-template-columns: 1fr; }}
+            .cluster-point:hover::after, .cluster-centroid:hover::after {{ left: -95px; top: 18px; }}
+        }}
     </style>
 </head>
 <body>
     <h1>Laporan Analisis Machine Learning</h1>
 
-    <div class="note"><strong>Metodologi:</strong> Seluruh analisis dilakukan pada data yang dinormalisasi (StandardScaler). Setiap klustering dilakukan secara independen menggunakan fitur terpilih (dengan korelasi &gt; ±0.5, ditandai dengan <span style="color: green;">teks hijau</span> pada tabel statistik kluster) dan 1 indikator pendidikan terkait.</div>
+    <div class="note"><strong>Metodologi:</strong> Klustering dilakukan independen per indikator pendidikan menggunakan fitur terpilih berbasis korelasi dan penskalaan RobustScaler. Fitur terpilih ditandai dengan <span style="color: green;">teks hijau</span> pada tabel statistik kluster; bila tidak ada fitur yang melewati ambang korelasi, pipeline memakai fitur dengan korelasi terkuat sebagai fallback.</div>
 
     <h2>1. Heatmap Korelasi Spearman</h2>
-    <div class="section"><div class="graph-container"><img src="data:image/png;base64,{heatmap}"></div></div>
+    <div class="section"><div class="graph-container">{heatmap_html}</div></div>
 
     <h2>2. Korelasi Tahunan (Tingkat Level)</h2>
     <div class="section">
@@ -594,9 +964,11 @@ class EnhancedReportGenerator:
                 <div><h4>HDBSCAN Metrics</h4>{self.generate_hdbscan_metrics_table(t)}</div>
             </div>
             <div class="tables-grid">
-                <div class="graph-container"><h4>Visualisasi K-Means</h4><img src="data:image/png;base64,{km_graphs.get(t, '')}"></div>
-                <div class="graph-container"><h4>Visualisasi HDBSCAN</h4><img src="data:image/png;base64,{hdb_graphs.get(t, '')}"></div>
+                <div class="graph-container"><h4>Visualisasi K-Means</h4>{km_graphs.get(t, '')}</div>
+                <div class="graph-container"><h4>Visualisasi HDBSCAN</h4>{hdb_graphs.get(t, '')}</div>
             </div>
+            <h4>Ringkasan Anggota K-Means ({self.target_names[t]})</h4>{self.generate_cluster_overview_table('kmeans', t)}
+            <h4>Ringkasan Anggota HDBSCAN ({self.target_names[t]})</h4>{self.generate_cluster_overview_table('hdbscan', t)}
             <h4>Statistik K-Means ({self.target_names[t]})</h4>{self.generate_cluster_statistics_table('kmeans', t)}
             <h4>Statistik HDBSCAN ({self.target_names[t]})</h4>{self.generate_cluster_statistics_table('hdbscan', t)}
         </div>
