@@ -32,7 +32,6 @@ plt.rcParams['axes.unicode_minus'] = False
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LinearRegression
-from sklearn.decomposition import PCA
 from sklearn.metrics import mean_absolute_error, r2_score
 from scipy.stats import spearmanr
 import base64
@@ -449,7 +448,7 @@ class EnhancedReportGenerator:
     def _cluster_display_name(self, label):
         if label == -1:
             return 'Noise'
-        return f'Kluster {label + 1}'
+        return f'Kluster {label}'
 
     def _get_cluster_order_from_labels(self, labels):
         unique_labels = sorted(set(int(l) for l in labels if int(l) != -1))
@@ -544,86 +543,27 @@ class EnhancedReportGenerator:
             tables[target] = html
         return tables
 
-    def generate_cluster_membership_visualizations(self, method='kmeans'):
-        """Generate cluster-member plots using only ml_results.json labels."""
-        graphs = {}
-        results = self.results.get('per_target_clustering', {})
-        colors = ['#2f6fb0', '#d95f02', '#1b9e77', '#7570b3', '#e7298a',
-                  '#66a61e', '#e6ab02', '#a6761d', '#1f9fd0', '#666666']
+    def _choose_plot_axes(self, target_results, available_columns):
+        selected = [c for c in target_results.get('selected_features', []) if c in available_columns]
+        correlations = target_results.get('feature_correlations', {})
 
-        for target in self.target_cols:
-            target_results = results.get(target, {})
-            method_results = target_results.get(method, {})
-            labels = [int(l) for l in method_results.get('labels', [])]
-            provinces = target_results.get('provinces', [])
-            if not labels or not provinces or len(labels) != len(provinces):
-                continue
+        if selected:
+            ranked = sorted(selected, key=lambda c: abs(correlations.get(c, 0)), reverse=True)
+        else:
+            ranked = []
 
-            cluster_labels = self._get_cluster_order_from_labels(labels)
-            n_clusters = max(1, len(cluster_labels))
-            cluster_positions = {label: idx for idx, label in enumerate(cluster_labels)}
-            buckets = {label: [] for label in cluster_labels}
-            for idx, label in enumerate(labels):
-                buckets[label].append(idx)
+        for col, _corr in sorted(correlations.items(), key=lambda item: abs(item[1]), reverse=True):
+            if col in available_columns and col not in ranked:
+                ranked.append(col)
 
-            points_html = []
-            for label in cluster_labels:
-                members = buckets[label]
-                col = cluster_positions[label]
-                x_base = 8 + ((col + 0.5) / n_clusters * 84)
-                for member_pos, idx in enumerate(members):
-                    rows = max(1, len(members))
-                    y_pct = 10 + ((member_pos + 0.5) / rows * 78)
-                    jitter = ((member_pos % 3) - 1) * 1.4
-                    x_pct = min(96, max(4, x_base + jitter))
-                    color = '#777777' if label == -1 else colors[label % len(colors)]
-                    cluster_name = self._cluster_display_name(label)
-                    tooltip = f'{provinces[idx]} | {cluster_name}'
-                    points_html.append(
-                        '<span class="cluster-point" '
-                        f'style="left:{x_pct:.2f}%; top:{y_pct:.2f}%; background:{color};" '
-                        f'data-tooltip="{escape(tooltip, quote=True)}" '
-                        f'aria-label="{escape(tooltip, quote=True)}"></span>'
-                    )
+        for col in self.predictor_cols_clustering:
+            if col in available_columns and col not in ranked:
+                ranked.append(col)
 
-            legend_items = []
-            for label in cluster_labels:
-                color = '#777777' if label == -1 else colors[label % len(colors)]
-                count = len(buckets[label])
-                legend_items.append(
-                    '<span class="legend-item">'
-                    f'<span class="legend-swatch" style="background:{color};"></span>'
-                    f'{self._cluster_display_name(label)} ({count})</span>'
-                )
-
-            cluster_guides = []
-            for label in cluster_labels:
-                col = cluster_positions[label]
-                left = 8 + (col / n_clusters * 84)
-                width = 84 / n_clusters
-                cluster_guides.append(
-                    f'<span class="cluster-column-label" style="left:{left:.2f}%; width:{width:.2f}%;">'
-                    f'{self._cluster_display_name(label)}</span>'
-                )
-
-            graphs[target] = f'''
-            <div class="cluster-viz" role="img" aria-label="Visualisasi anggota {method.upper()} {self.target_names[target]}">
-                <div class="cluster-viz-head">
-                    <span>Layout fallback dari ml_results.json</span>
-                    <span>Hover titik untuk nama provinsi</span>
-                </div>
-                <div class="cluster-plot cluster-membership-plot">
-                    {''.join(cluster_guides)}
-                    {''.join(points_html)}
-                </div>
-                <div class="cluster-legend">{''.join(legend_items)}</div>
-                <div class="cluster-features">Visualisasi ini memakai label kluster tersimpan; koneksi database diperlukan hanya untuk plot PCA berbasis fitur.</div>
-            </div>
-            '''
-        return graphs
+        return ranked[:2]
 
     def generate_clustering_visualizations(self, method='kmeans'):
-        """Generate interactive clustering graphs for each target."""
+        """Generate interactive 2D cluster graphs using real feature axes."""
         graphs = {}
         results = self.results.get('per_target_clustering', {})
         if self.df_clustering is None:
@@ -635,35 +575,31 @@ class EnhancedReportGenerator:
             if not t_data: continue
             
             t_col = f"{target}_mean"
-            selected_features = target_results.get('selected_features') or self.predictor_cols_clustering
-            plot_cols = [c for c in selected_features if c in self.df_clustering.columns]
-            if not plot_cols:
-                plot_cols = self.predictor_cols_clustering
-            if len(plot_cols) < 2:
-                fallback_cols = [c for c in self.predictor_cols_clustering if c not in plot_cols and c in self.df_clustering.columns]
-                plot_cols = (plot_cols + fallback_cols)[:2]
-
             df_cols = list(dict.fromkeys(['provinsi'] + self.predictor_cols_clustering + [t_col]))
             df = self.df_clustering[df_cols].dropna()
             labels = np.array(t_data.get('labels', []), dtype=int)
+
+            result_provinces = target_results.get('provinces', [])
+            if result_provinces:
+                df = df.set_index('provinsi').reindex(result_provinces).reset_index()
+                valid_rows = ~df[self.predictor_cols_clustering + [t_col]].isna().any(axis=1)
+                df = df[valid_rows].reset_index(drop=True)
+                labels = labels[valid_rows.to_numpy()]
             
             if len(df) != len(labels):
                 logger.warning(f"Length mismatch for {target} ({method}): df={len(df)}, labels={len(labels)}")
                 continue
 
-            X = RobustScaler().fit_transform(df[plot_cols])
-            pca = PCA(n_components=2)
-            X_pca = pca.fit_transform(X)
-            loadings = pd.DataFrame(
-                pca.components_.T,
-                columns=['PC1', 'PC2'],
-                index=[self.predictor_short_names.get(c, c) for c in plot_cols]
-            )
-            pc1_top = loadings['PC1'].abs().sort_values(ascending=False).head(3).index.tolist()
-            pc2_top = loadings['PC2'].abs().sort_values(ascending=False).head(3).index.tolist()
+            plot_cols = self._choose_plot_axes(target_results, df.columns)
+            if len(plot_cols) < 2:
+                logger.warning(f"Not enough plot columns for {target} ({method})")
+                continue
 
-            x_min, x_max = X_pca[:, 0].min(), X_pca[:, 0].max()
-            y_min, y_max = X_pca[:, 1].min(), X_pca[:, 1].max()
+            x_col, y_col = plot_cols
+            x_values = df[x_col].astype(float).to_numpy()
+            y_values = df[y_col].astype(float).to_numpy()
+            x_min, x_max = np.nanmin(x_values), np.nanmax(x_values)
+            y_min, y_max = np.nanmin(y_values), np.nanmax(y_values)
             x_span = x_max - x_min if x_max != x_min else 1
             y_span = y_max - y_min if y_max != y_min else 1
             colors = ['#2f6fb0', '#d95f02', '#1b9e77', '#7570b3', '#e7298a',
@@ -675,8 +611,10 @@ class EnhancedReportGenerator:
 
             for idx, row in df.reset_index(drop=True).iterrows():
                 label = int(labels[idx])
-                x_pct = 7 + ((X_pca[idx, 0] - x_min) / x_span * 86)
-                y_pct = 93 - ((X_pca[idx, 1] - y_min) / y_span * 86)
+                x_val = float(row[x_col])
+                y_val = float(row[y_col])
+                x_pct = 7 + ((x_val - x_min) / x_span * 86)
+                y_pct = 93 - ((y_val - y_min) / y_span * 86)
                 jitter = ((idx % 5) - 2) * 0.35
                 x_pct = min(96, max(4, x_pct + jitter))
                 y_pct = min(96, max(4, y_pct - jitter))
@@ -685,7 +623,8 @@ class EnhancedReportGenerator:
                 tooltip = (
                     f"{row['provinsi']} | {cluster_name} | "
                     f"{self.target_names.get(target, target)}: {row[t_col]:.2f} | "
-                    f"PC1: {X_pca[idx, 0]:.2f}, PC2: {X_pca[idx, 1]:.2f}"
+                    f"{self.predictor_short_names.get(x_col, x_col)}: {x_val:.2f} | "
+                    f"{self.predictor_short_names.get(y_col, y_col)}: {y_val:.2f}"
                 )
                 points_html.append(
                     '<span class="cluster-point" '
@@ -699,13 +638,14 @@ class EnhancedReportGenerator:
                     if label == -1:
                         continue
                     mask = labels == label
-                    centroid = X_pca[mask].mean(axis=0)
-                    x_pct = 7 + ((centroid[0] - x_min) / x_span * 86)
-                    y_pct = 93 - ((centroid[1] - y_min) / y_span * 86)
+                    x_mean = x_values[mask].mean()
+                    y_mean = y_values[mask].mean()
+                    x_pct = 7 + ((x_mean - x_min) / x_span * 86)
+                    y_pct = 93 - ((y_mean - y_min) / y_span * 86)
                     centroid_html.append(
                         '<span class="cluster-centroid" '
                         f'style="left:{x_pct:.2f}%; top:{y_pct:.2f}%;" '
-                        f'data-tooltip="Sentroid {self._cluster_display_name(label)}"></span>'
+                        f'data-tooltip="Rata-rata {self._cluster_display_name(label)} pada dua sumbu tampilan"></span>'
                     )
 
             legend_items = []
@@ -718,26 +658,31 @@ class EnhancedReportGenerator:
                     f'{self._cluster_display_name(label)} ({count})</span>'
                 )
             if method == 'kmeans':
-                legend_items.append('<span class="legend-item"><span class="centroid-legend">X</span>Sentroid</span>')
+                legend_items.append('<span class="legend-item"><span class="centroid-legend">X</span>Rata-rata kluster</span>')
 
-            feature_names = ', '.join(self.predictor_short_names.get(c, c) for c in plot_cols)
+            x_name = self.predictor_short_names.get(x_col, x_col)
+            y_name = self.predictor_short_names.get(y_col, y_col)
+            selected_feature_names = ', '.join(
+                self.predictor_short_names.get(c, c)
+                for c in target_results.get('selected_features', [])
+            )
             graphs[target] = f'''
             <div class="cluster-viz" role="img" aria-label="Visualisasi {method.upper()} {self.target_names[target]}">
                 <div class="cluster-viz-head">
-                    <span>PC1 {pca.explained_variance_ratio_[0]:.1%}</span>
-                    <span>PC2 {pca.explained_variance_ratio_[1]:.1%}</span>
+                    <span>X: {escape(x_name)}</span>
+                    <span>Y: {escape(y_name)}</span>
                 </div>
                 <div class="cluster-plot">
-                    <span class="axis-label axis-x">PC1</span>
-                    <span class="axis-label axis-y">PC2</span>
+                    <span class="axis-label axis-x">{escape(x_name)}</span>
+                    <span class="axis-label axis-y">{escape(y_name)}</span>
                     {''.join(points_html)}
                     {''.join(centroid_html)}
                 </div>
                 <div class="cluster-legend">{''.join(legend_items)}</div>
                 <div class="cluster-features">
-                    Sumbu X = PC1 ({pca.explained_variance_ratio_[0]:.1%} variasi), terutama dipengaruhi: {escape(', '.join(pc1_top))}.<br>
-                    Sumbu Y = PC2 ({pca.explained_variance_ratio_[1]:.1%} variasi), terutama dipengaruhi: {escape(', '.join(pc2_top))}.<br>
-                    Fitur PCA: {escape(feature_names)}
+                    Sumbu X = {escape(x_name)}. Sumbu Y = {escape(y_name)}.<br>
+                    Kedua sumbu dipilih dari fitur terpilih dengan korelasi terkuat terhadap target. Label kluster tetap berasal dari model {method.upper()} yang berjalan pada seluruh fitur terpilih.<br>
+                    Fitur model: {escape(selected_feature_names or '-')}
                 </div>
             </div>
             '''
